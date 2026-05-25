@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard — Escuela de Padres</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap');
+
+  :root {
+    --bg: #0d0d14;
+    --surface: #15151f;
+    --card: #1c1c2a;
+    --border: #2a2a3d;
+    --accent1: #7c3aed;
+    --accent2: #06b6d4;
+    --accent3: #f59e0b;
+    --accent4: #10b981;
+    --text: #e8e8f0;
+    --muted: #7a7a9a;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* BG texture */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 50% at 20% 10%, rgba(124,58,237,0.12) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 80% 80%, rgba(6,182,212,0.08) 0%, transparent 55%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrapper { position: relative; z-index: 1; max-width: 1200px; margin: 0 auto; padding: 48px 24px; }
+
+  /* HEADER */
+  header { margin-bottom: 48px; }
+  .label-top {
+    font-family: 'Syne', sans-serif;
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--accent2);
+    margin-bottom: 12px;
+  }
+  h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(28px, 5vw, 52px);
+    font-weight: 800;
+    line-height: 1.1;
+    color: var(--text);
+  }
+  h1 span { color: var(--accent1); }
+  .subtitle {
+    margin-top: 10px;
+    color: var(--muted);
+    font-size: 15px;
+    font-weight: 300;
+  }
+
+  /* KPI CARDS */
+  .kpis {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 40px;
+  }
+  .kpi {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px 20px;
+    position: relative;
+    overflow: hidden;
+    animation: fadeUp 0.5s ease both;
+  }
+  .kpi::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--kpi-color, var(--accent1));
+  }
+  .kpi-val {
+    font-family: 'Syne', sans-serif;
+    font-size: 40px;
+    font-weight: 800;
+    color: var(--kpi-color, var(--accent1));
+    line-height: 1;
+  }
+  .kpi-label { font-size: 12px; color: var(--muted); margin-top: 6px; text-transform: uppercase; letter-spacing: 1px; }
+
+  /* GRID */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; }
+  .grid-1 { margin-bottom: 24px; }
+  @media (max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } }
+
+  /* CHART CARDS */
+  .chart-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 28px;
+    animation: fadeUp 0.6s ease both;
+  }
+  .chart-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+  .chart-subtitle { font-size: 20px; font-weight: 500; margin-bottom: 24px; }
+  .chart-wrap { position: relative; }
+
+  /* FILTER */
+  .filters {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+  .filter-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-size: 12px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.2s;
+  }
+  .filter-btn:hover, .filter-btn.active {
+    background: var(--accent1);
+    border-color: var(--accent1);
+    color: #fff;
+  }
+
+  /* TABLE */
+  .table-wrap { overflow-x: auto; margin-top: 8px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th {
+    background: var(--surface);
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 11px;
+    padding: 12px 14px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  td { padding: 11px 14px; border-bottom: 1px solid var(--border); color: var(--text); }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(124,58,237,0.06); }
+  .badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    background: rgba(124,58,237,0.15);
+    color: var(--accent1);
+  }
+  .bar-inline {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .bar-bg {
+    flex: 1;
+    height: 6px;
+    background: var(--border);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 99px;
+    background: linear-gradient(90deg, var(--accent1), var(--accent2));
+    transition: width 0.8s ease;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* LEGEND custom */
+  .legend { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+  footer { text-align: center; color: var(--muted); font-size: 12px; margin-top: 60px; }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <!-- HEADER -->
+  <header>
+    <p class="label-top">Escuela de Padres · Reporte de Asistencia</p>
+    <h1>Dashboard de <span>Participación</span></h1>
+    <p class="subtitle">Consolidado de 8 talleres · Todos los grados y secciones</p>
+  </header>
+
+  <!-- KPIs -->
+  <div class="kpis">
+    <div class="kpi" style="--kpi-color: #7c3aed; animation-delay:0s">
+      <div class="kpi-val">163</div>
+      <div class="kpi-label">Total registros</div>
+    </div>
+    <div class="kpi" style="--kpi-color: #06b6d4; animation-delay:.1s">
+      <div class="kpi-val">8</div>
+      <div class="kpi-label">Talleres</div>
+    </div>
+    <div class="kpi" style="--kpi-color: #f59e0b; animation-delay:.2s">
+      <div class="kpi-val">18</div>
+      <div class="kpi-label">Grados / Secciones</div>
+    </div>
+    <div class="kpi" style="--kpi-color: #10b981; animation-delay:.3s">
+      <div class="kpi-val">44</div>
+      <div class="kpi-label">Máx. en un taller</div>
+    </div>
+    <div class="kpi" style="--kpi-color: #f43f5e; animation-delay:.4s">
+      <div class="kpi-val">20</div>
+      <div class="kpi-label">Promedio / taller</div>
+    </div>
+  </div>
+
+  <!-- ROW 1: Talleres + Grados -->
+  <div class="grid-2">
+
+    <!-- Asistencia por Taller -->
+    <div class="chart-card" style="animation-delay:.2s">
+      <p class="chart-title">Vista general</p>
+      <p class="chart-subtitle">Asistencia por taller</p>
+      <div class="chart-wrap" style="height:280px">
+        <canvas id="chartTalleres"></canvas>
+      </div>
+    </div>
+
+    <!-- Top Grados -->
+    <div class="chart-card" style="animation-delay:.3s">
+      <p class="chart-title">Vista general</p>
+      <p class="chart-subtitle">Participaciones por grado</p>
+      <div class="chart-wrap" style="height:280px">
+        <canvas id="chartGrados"></canvas>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ROW 2: Heatmap grado x taller -->
+  <div class="grid-1">
+    <div class="chart-card" style="animation-delay:.4s">
+      <p class="chart-title">Análisis cruzado</p>
+      <p class="chart-subtitle">Participación por grado en cada taller</p>
+
+      <div class="filters" id="filtroNivel">
+        <button class="filter-btn active" data-nivel="todos">Todos</button>
+        <button class="filter-btn" data-nivel="inicial">Inicial</button>
+        <button class="filter-btn" data-nivel="primaria">Primaria</button>
+        <button class="filter-btn" data-nivel="secundaria">Secundaria</button>
+      </div>
+
+      <div class="chart-wrap" style="height:340px">
+        <canvas id="chartHeatmap"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- ROW 3: Tabla detalle -->
+  <div class="grid-1">
+    <div class="chart-card" style="animation-delay:.5s">
+      <p class="chart-title">Detalle completo</p>
+      <p class="chart-subtitle">Tabla de participación por grado y sección</p>
+      <div class="table-wrap">
+        <table id="tablaDetalle">
+          <thead>
+            <tr>
+              <th>Grado / Sección</th>
+              <th>Total participaciones</th>
+              <th>Talleres asistidos</th>
+              <th>Participación relativa</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyDetalle"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ROW 4: Tabla talleres -->
+  <div class="grid-1">
+    <div class="chart-card" style="animation-delay:.6s">
+      <p class="chart-title">Detalle por taller</p>
+      <p class="chart-subtitle">Resumen de cada taller</p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>#</th><th>Taller</th><th>Asistentes</th><th>% del total</th></tr>
+          </thead>
+          <tbody id="tbodyTalleres"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <footer>Generado automáticamente · Escuela de Padres</footer>
+</div>
+
+<script>
+const DATA = {
+  talleres: {
+    "Decisiones que protegen": 9,
+    "Familias Saludables (30 cupos)": 16,
+    "Criar con firmeza y cariño": 22,
+    "Conectando con mis hijos": 22,
+    "Hijos en la Era Digital": 19,
+    "Familias Saludables (70 cupos)": 6,
+    "Corrigiendo con respeto": 44,
+    "Educar emociones": 25
+  },
+  porGrado: {
+    "Inicial 3 años": {"total":5,"talleres":{"Familias Saludables (30 cupos)":3,"Hijos en la Era Digital":1,"Familias Saludables (70 cupos)":1}},
+    "Inicial 4 años": {"total":17,"talleres":{"Familias Saludables (30 cupos)":3,"Criar con firmeza y cariño":3,"Conectando con mis hijos":3,"Corrigiendo con respeto":7,"Educar emociones":1}},
+    "Inicial 5 años": {"total":14,"talleres":{"Conectando con mis hijos":1,"Hijos en la Era Digital":3,"Corrigiendo con respeto":8,"Educar emociones":2}},
+    "1ro Primaria \"Tales de Mileto\"": {"total":8,"talleres":{"Familias Saludables (30 cupos)":1,"Criar con firmeza y cariño":1,"Corrigiendo con respeto":5,"Educar emociones":1}},
+    "2do Primaria \"Cáceres\"": {"total":11,"talleres":{"Decisiones que protegen":1,"Criar con firmeza y cariño":2,"Conectando con mis hijos":1,"Hijos en la Era Digital":3,"Corrigiendo con respeto":3,"Educar emociones":1}},
+    "2do Primaria \"Churata\"": {"total":8,"talleres":{"Decisiones que protegen":1,"Conectando con mis hijos":2,"Hijos en la Era Digital":1,"Familias Saludables (70 cupos)":1,"Educar emociones":3}},
+    "3ro Primaria \"Paredes\"": {"total":19,"talleres":{"Decisiones que protegen":1,"Familias Saludables (30 cupos)":1,"Criar con firmeza y cariño":2,"Conectando con mis hijos":3,"Hijos en la Era Digital":3,"Corrigiendo con respeto":7,"Educar emociones":2}},
+    "3ro Primaria \"Závala\"": {"total":13,"talleres":{"Criar con firmeza y cariño":4,"Conectando con mis hijos":3,"Hijos en la Era Digital":2,"Corrigiendo con respeto":3,"Educar emociones":1}},
+    "4to Primaria \"Jilapa\"": {"total":4,"talleres":{"Conectando con mis hijos":2,"Familias Saludables (70 cupos)":1,"Corrigiendo con respeto":1}},
+    "5to Primaria \"Arriola\"": {"total":10,"talleres":{"Familias Saludables (30 cupos)":2,"Criar con firmeza y cariño":2,"Corrigiendo con respeto":3,"Educar emociones":3}},
+    "5to Primaria \"Vásquez\"": {"total":6,"talleres":{"Criar con firmeza y cariño":1,"Hijos en la Era Digital":1,"Corrigiendo con respeto":1,"Educar emociones":3}},
+    "6to Primaria \"Oquendo\"": {"total":10,"talleres":{"Familias Saludables (30 cupos)":1,"Criar con firmeza y cariño":3,"Conectando con mis hijos":2,"Hijos en la Era Digital":2,"Educar emociones":2}},
+    "6to Primaria \"Padilla\"": {"total":7,"talleres":{"Criar con firmeza y cariño":1,"Corrigiendo con respeto":3,"Educar emociones":3}},
+    "1ro Secundaria": {"total":11,"talleres":{"Decisiones que protegen":1,"Familias Saludables (30 cupos)":3,"Criar con firmeza y cariño":2,"Hijos en la Era Digital":1,"Familias Saludables (70 cupos)":2,"Corrigiendo con respeto":2}},
+    "2do Secundaria": {"total":6,"talleres":{"Decisiones que protegen":2,"Conectando con mis hijos":1,"Educar emociones":3}},
+    "3ro Secundaria": {"total":6,"talleres":{"Familias Saludables (30 cupos)":1,"Criar con firmeza y cariño":1,"Conectando con mis hijos":1,"Hijos en la Era Digital":2,"Corrigiendo con respeto":1}},
+    "4to Secundaria": {"total":1,"talleres":{"Conectando con mis hijos":1}},
+    "5to Secundaria": {"total":7,"talleres":{"Decisiones que protegen":3,"Familias Saludables (30 cupos)":1,"Conectando con mis hijos":2,"Familias Saludables (70 cupos)":1}}
+  }
+};
+
+const COLORS = [
+  '#7c3aed','#06b6d4','#f59e0b','#10b981',
+  '#f43f5e','#8b5cf6','#0ea5e9','#84cc16'
+];
+
+const TALLER_NAMES = Object.keys(DATA.talleres);
+const TALLER_VALS = Object.values(DATA.talleres);
+const TOTAL = 163;
+
+// Chart defaults
+Chart.defaults.color = '#7a7a9a';
+Chart.defaults.font.family = 'DM Sans';
+
+// ── CHART 1: Talleres (doughnut) ──────────────────────────────────
+new Chart(document.getElementById('chartTalleres'), {
+  type: 'doughnut',
+  data: {
+    labels: TALLER_NAMES,
+    datasets: [{
+      data: TALLER_VALS,
+      backgroundColor: COLORS,
+      borderColor: '#1c1c2a',
+      borderWidth: 3,
+      hoverOffset: 8
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: '65%',
+    plugins: {
+      legend: { position: 'right', labels: { boxWidth: 10, padding: 12, font: { size: 11 } } },
+      tooltip: {
+        callbacks: {
+          label: ctx => ` ${ctx.label}: ${ctx.raw} asistentes (${Math.round(ctx.raw/TOTAL*100)}%)`
+        }
+      }
+    }
+  }
+});
+
+// ── CHART 2: Grados (horizontal bar) ─────────────────────────────
+const gradosSorted = Object.entries(DATA.porGrado).sort((a,b) => b[1].total - a[1].total);
+new Chart(document.getElementById('chartGrados'), {
+  type: 'bar',
+  data: {
+    labels: gradosSorted.map(g => g[0].replace(/"/g,'')),
+    datasets: [{
+      data: gradosSorted.map(g => g[1].total),
+      backgroundColor: gradosSorted.map((_, i) => COLORS[i % COLORS.length] + 'cc'),
+      borderColor: gradosSorted.map((_, i) => COLORS[i % COLORS.length]),
+      borderWidth: 1,
+      borderRadius: 6,
+    }]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { color: '#2a2a3d' }, ticks: { font: { size: 11 } } },
+      y: { grid: { display: false }, ticks: { font: { size: 10 } } }
+    }
+  }
+});
+
+// ── CHART 3: Heatmap (stacked bar por nivel) ───────────────────────
+let heatmapChart = null;
+
+function buildHeatmap(nivel) {
+  let grados = Object.entries(DATA.porGrado);
+  if (nivel === 'inicial') grados = grados.filter(g => g[0].startsWith('Inicial'));
+  else if (nivel === 'primaria') grados = grados.filter(g => g[0].includes('Primaria'));
+  else if (nivel === 'secundaria') grados = grados.filter(g => g[0].includes('Secundaria'));
+  grados.sort((a,b) => b[1].total - a[1].total);
+
+  const labels = grados.map(g => g[0].replace(/"/g,''));
+  const datasets = TALLER_NAMES.map((taller, i) => ({
+    label: taller,
+    data: grados.map(g => g[1].talleres[taller] || 0),
+    backgroundColor: COLORS[i] + 'bb',
+    borderColor: COLORS[i],
+    borderWidth: 1,
+    borderRadius: 4,
+  }));
+
+  if (heatmapChart) heatmapChart.destroy();
+  heatmapChart = new Chart(document.getElementById('chartHeatmap'), {
+    type: 'bar',
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', labels: { boxWidth: 10, padding: 10, font: { size: 11 } } }
+      },
+      scales: {
+        x: { stacked: true, grid: { display: false }, ticks: { font: { size: 10 } } },
+        y: { stacked: true, grid: { color: '#2a2a3d' } }
+      }
+    }
+  });
+}
+
+buildHeatmap('todos');
+
+document.querySelectorAll('#filtroNivel .filter-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('#filtroNivel .filter-btn').forEach(b => b.classList.remove('active'));
+    this.classList.add('active');
+    buildHeatmap(this.dataset.nivel);
+  });
+});
+
+// ── TABLA GRADOS ───────────────────────────────────────────────────
+const tbody = document.getElementById('tbodyDetalle');
+gradosSorted.forEach(([grado, info]) => {
+  const pct = Math.round(info.total / TOTAL * 100);
+  const tallCount = Object.keys(info.talleres).length;
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td>${grado.replace(/"/g,'')}</td>
+    <td><span class="badge">${info.total}</span></td>
+    <td>${tallCount} de 8</td>
+    <td>
+      <div class="bar-inline">
+        <div class="bar-bg"><div class="bar-fill" style="width:${pct}%"></div></div>
+        <span style="font-size:12px;color:var(--muted);min-width:32px">${pct}%</span>
+      </div>
+    </td>
+  `;
+  tbody.appendChild(tr);
+});
+
+// ── TABLA TALLERES ─────────────────────────────────────────────────
+const tbodyT = document.getElementById('tbodyTalleres');
+TALLER_NAMES.forEach((t, i) => {
+  const v = TALLER_VALS[i];
+  const pct = Math.round(v / TOTAL * 100);
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td style="color:var(--muted)">${i+1}</td>
+    <td>${t}</td>
+    <td><span class="badge">${v}</span></td>
+    <td>
+      <div class="bar-inline">
+        <div class="bar-bg"><div class="bar-fill" style="width:${pct*2.5}%;background:${COLORS[i]}"></div></div>
+        <span style="font-size:12px;color:var(--muted);min-width:32px">${pct}%</span>
+      </div>
+    </td>
+  `;
+  tbodyT.appendChild(tr);
+});
+</script>
+</body>
+</html>
