@@ -52,10 +52,12 @@ def leer_sheet(nombre, url):
     try:
         r = requests.get(url, headers=HEADERS, timeout=15)
         r.raise_for_status()
-        try:
-            df = pd.read_csv(io.StringIO(r.content.decode('utf-8')))
-        except Exception:
-            df = pd.read_csv(io.StringIO(r.content.decode('latin-1')))
+        for enc in ['utf-8-sig', 'utf-8', 'latin-1']:
+            try:
+                df = pd.read_csv(io.StringIO(r.content.decode(enc)))
+                break
+            except Exception:
+                continue
         print(f"  OK {nombre}: {len(df)} registros")
         return df
     except Exception as e:
@@ -320,25 +322,28 @@ footer{text-align:center;color:var(--muted);font-size:11px;margin-top:56px}
   <div class="card">
     <p class="ct">Directorio por salon</p>
     <p class="cs">Inscritos por grado y seccion</p>
-    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:20px">
-      <select id="selGrado" style="background:#15151f;border:1px solid #2a2a3d;color:#e8e8f0;padding:8px 14px;border-radius:10px;font-size:13px;font-family:DM Sans,sans-serif;cursor:pointer;min-width:240px">
-        <option value="">-- Selecciona un grado/seccion --</option>
-      </select>
-      <select id="selTaller" style="background:#15151f;border:1px solid #2a2a3d;color:#e8e8f0;padding:8px 14px;border-radius:10px;font-size:13px;font-family:DM Sans,sans-serif;cursor:pointer;min-width:220px">
-        <option value="todos">Todos los talleres</option>
-      </select>
-      <span id="countBadge" style="display:none;background:rgba(124,58,237,.15);color:#7c3aed;padding:4px 12px;border-radius:999px;font-size:12px;font-weight:600"></span>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:24px">
+      <div style="position:relative;flex:1;min-width:220px">
+        <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#7a7a9a;font-size:14px">&#127979;</span>
+        <select id="selGrado" style="width:100%;background:#15151f;border:1px solid #2a2a3d;color:#e8e8f0;padding:10px 14px 10px 34px;border-radius:12px;font-size:13px;font-family:DM Sans,sans-serif;cursor:pointer;appearance:none">
+          <option value="">Selecciona un grado / seccion</option>
+        </select>
+      </div>
+      <div style="position:relative;min-width:200px">
+        <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#7a7a9a;font-size:14px">&#128203;</span>
+        <select id="selTaller" style="width:100%;background:#15151f;border:1px solid #2a2a3d;color:#e8e8f0;padding:10px 14px 10px 34px;border-radius:12px;font-size:13px;font-family:DM Sans,sans-serif;cursor:pointer;appearance:none">
+          <option value="todos">Todos los talleres</option>
+        </select>
+      </div>
+      <span id="countBadge" style="display:none;background:linear-gradient(135deg,#7c3aed,#06b6d4);color:#fff;padding:8px 16px;border-radius:999px;font-size:13px;font-weight:700;white-space:nowrap"></span>
+    </div>
+    <div id="placeholderDir" style="text-align:center;padding:60px 20px;color:#7a7a9a">
+      <div style="font-size:40px;margin-bottom:12px">&#127979;</div>
+      <div style="font-size:15px;font-weight:500">Selecciona un grado para ver los inscritos</div>
+      <div style="font-size:12px;margin-top:6px">Puedes filtrar ademas por taller especifico</div>
     </div>
     <div id="listaInscritos" style="display:none">
-      <div class="tw">
-        <table>
-          <thead><tr><th>#</th><th>Nombre del asistente</th><th>Nombre del hijo/a</th><th>Talleres inscritos</th></tr></thead>
-          <tbody id="tbInscritos"></tbody>
-        </table>
-      </div>
-    </div>
-    <div id="placeholderDir" style="text-align:center;padding:40px;color:#7a7a9a;font-size:14px">
-      Selecciona un grado para ver los inscritos
+      <div id="gridInscritos" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px"></div>
     </div>
   </div>
 </div>
@@ -486,12 +491,11 @@ Object.entries(ponentes).forEach(([nombre,info],i)=>{
 });
 
 // ── Directorio por salon ─────────────────────────────────────────
-const selGrado=document.getElementById('selGrado');
-const selTaller=document.getElementById('selTaller');
-const tbIns=document.getElementById('tbInscritos');
-const listaDiv=document.getElementById('listaInscritos');
-const placeholder=document.getElementById('placeholderDir');
-const countBadge=document.getElementById('countBadge');
+const selGrado   = document.getElementById('selGrado');
+const selTaller  = document.getElementById('selTaller');
+const listaDiv   = document.getElementById('listaInscritos');
+const placeholder= document.getElementById('placeholderDir');
+const countBadge = document.getElementById('countBadge');
 
 Object.keys(NOMBRES).sort().forEach(grado=>{
   const opt=document.createElement('option');
@@ -499,31 +503,58 @@ Object.keys(NOMBRES).sort().forEach(grado=>{
   selGrado.appendChild(opt);
 });
 
+const TALLER_COLORS = ['#7c3aed','#06b6d4','#f59e0b','#10b981','#f43f5e','#8b5cf6','#0ea5e9','#84cc16'];
+const TALLER_COLOR_MAP = {};
+TALLERES.forEach((t,i) => { TALLER_COLOR_MAP[t.name] = TALLER_COLORS[i%TALLER_COLORS.length]; });
+
 function renderInscritos(){
-  const grado=selGrado.value;
-  const taller=selTaller.value;
-  if(!grado){ listaDiv.style.display='none'; placeholder.style.display='block'; countBadge.style.display='none'; return; }
-  listaDiv.style.display='block'; placeholder.style.display='none'; tbIns.innerHTML='';
+  const grado   = selGrado.value;
+  const taller  = selTaller.value;
+  const gridDiv = document.getElementById('gridInscritos');
+
+  if(!grado){
+    listaDiv.style.display='none';
+    placeholder.style.display='block';
+    countBadge.style.display='none';
+    return;
+  }
+  listaDiv.style.display='block';
+  placeholder.style.display='none';
+  gridDiv.innerHTML='';
 
   let personas = NOMBRES[grado] || [];
-
-  // Si filtra por taller especifico, solo mostrar quienes estan en ese taller
   if(taller !== 'todos'){
     personas = personas.filter(p => p.talleres.includes(taller));
   }
 
-  // Una fila por persona, con todos sus talleres en chips
-  personas.forEach((p,i)=>{
-    const talleresHtml = p.talleres.map(t=>'<span class="taller-tag">'+t+'</span>').join('');
-    const tr=document.createElement('tr');
-    tr.innerHTML='<td style="color:#7a7a9a">'+(i+1)+'</td>'+
-      '<td style="font-weight:500">'+p.asistente+'</td>'+
-      '<td style="color:#e8e8f0">'+p.estudiante+'</td>'+
-      '<td>'+talleresHtml+'</td>';
-    tbIns.appendChild(tr);
+  personas.forEach((p, i) => {
+    const initials = p.asistente.split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase();
+    const color = TALLER_COLORS[i % TALLER_COLORS.length];
+    const talleresHtml = p.talleres.map(t => {
+      const c = TALLER_COLOR_MAP[t] || '#7c3aed';
+      return '<span style="display:inline-block;margin:2px;padding:3px 9px;border-radius:999px;font-size:10px;font-weight:600;background:'+c+'22;color:'+c+';border:1px solid '+c+'44">'+t+'</span>';
+    }).join('');
+
+    const card = document.createElement('div');
+    card.style.cssText = 'background:#15151f;border:1px solid #2a2a3d;border-radius:16px;padding:18px;position:relative;overflow:hidden;transition:transform .2s,border-color .2s;cursor:default';
+    card.onmouseenter = function(){ this.style.transform='translateY(-2px)'; this.style.borderColor='#7c3aed55'; };
+    card.onmouseleave = function(){ this.style.transform=''; this.style.borderColor='#2a2a3d'; };
+
+    card.innerHTML =
+      '<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">' +
+        '<div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,'+color+','+color+'88);display:flex;align-items:center;justify-content:center;font-family:Syne,sans-serif;font-weight:800;font-size:14px;color:#fff;flex-shrink:0">'+initials+'</div>' +
+        '<div style="min-width:0">' +
+          '<div style="font-weight:600;font-size:14px;color:#e8e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+p.asistente+'</div>' +
+          (p.estudiante ? '<div style="font-size:11px;color:#7a7a9a;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Hijo/a: '+p.estudiante+'</div>' : '') +
+        '</div>' +
+      '</div>' +
+      '<div style="display:flex;flex-wrap:wrap;gap:4px">'+talleresHtml+'</div>' +
+      '<div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,'+color+',transparent)"></div>';
+
+    gridDiv.appendChild(card);
   });
 
-  countBadge.textContent=personas.length+' personas';
+  countBadge.textContent = personas.length + (personas.length===1?' persona':' personas');
   countBadge.style.display='inline-block';
 }
 
