@@ -421,10 +421,10 @@ function buildStack(nivel){
   if(nivel==='inicial') grados=grados.filter(g=>g[0].startsWith('Inicial'));
   if(nivel==='primaria') grados=grados.filter(g=>g[0].includes('Primaria'));
   if(nivel==='secundaria') grados=grados.filter(g=>g[0].includes('Secundaria'));
-  grados.sort((a,b)=>b[1].total-a[1].total);
+  grados.sort((a,b)=>(POR_GRADO_UNICAS[b[0]]||0)-(POR_GRADO_UNICAS[a[0]]||0));
   const labels=grados.map(g=>g[0].replace(/['"]/g,''));
   const datasets=TALLERES.map((t,i)=>({
-    label:t.name,data:grados.map(g=>g[1].talleres[t.name]||0),
+    label:t.name,data:grados.map(g=>(POR_GRADO_UNICAS_TALLER[g[0]]&&POR_GRADO_UNICAS_TALLER[g[0]][t.name])||0),
     backgroundColor:COLORS[i%COLORS.length]+'bb',borderColor:COLORS[i%COLORS.length],borderWidth:1,borderRadius:3
   }));
   if(stackChart) stackChart.destroy();
