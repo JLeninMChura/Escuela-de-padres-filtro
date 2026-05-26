@@ -599,7 +599,21 @@ if __name__ == "__main__":
     with open(output, "w", encoding="utf-8") as f:
         f.write(html)
 
+    # Generar asistencia_evento.html inyectando los datos de NOMBRES
+    import pathlib, json as _json
+    nombres_json = _json.dumps(nombres, ensure_ascii=False)
+    template_path = pathlib.Path("asistencia.html")
+    if template_path.exists():
+        asistencia_template = template_path.read_text(encoding="utf-8")
+        asistencia_html = asistencia_template.replace("__NOMBRES_JSON__", nombres_json)
+        with open("asistencia_evento.html", "w", encoding="utf-8") as f:
+            f.write(asistencia_html)
+        print(f"Formulario asistencia generado: asistencia_evento.html")
+    else:
+        print("AVISO: asistencia.html no encontrado, saltando generacion del formulario")
+
     print(f"\nDashboard generado: {output}")
+    print(f"Formulario asistencia generado: asistencia.html")
     print(f"Total registros: {total} | Ocupacion global: {round(total/cupo_total*100)}%")
     print("\nAbriendo en el navegador...")
     webbrowser.open(f"file:///{os.path.abspath(output)}")

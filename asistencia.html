@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Registro de Asistencia — Escuela de Padres</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap');
+:root{--bg:#0d0d14;--card:#1c1c2a;--border:#2a2a3d;--surf:#15151f;
+  --a1:#7c3aed;--a2:#06b6d4;--a3:#f59e0b;--a4:#10b981;--a5:#f43f5e;
+  --text:#e8e8f0;--muted:#7a7a9a}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh}
+body::before{content:'';position:fixed;inset:0;
+  background:radial-gradient(ellipse 80% 50% at 20% 10%,rgba(124,58,237,.12),transparent 60%),
+             radial-gradient(ellipse 60% 40% at 80% 80%,rgba(6,182,212,.08),transparent 55%);
+  pointer-events:none;z-index:0}
+.wrap{position:relative;z-index:1;max-width:960px;margin:0 auto;padding:40px 20px}
+.lbl{font-family:'Syne',sans-serif;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--a2);margin-bottom:10px}
+h1{font-family:'Syne',sans-serif;font-size:clamp(24px,4vw,42px);font-weight:800;margin-bottom:6px}
+h1 span{color:var(--a1)}
+.sub{color:var(--muted);font-size:14px;margin-bottom:32px}
+
+/* Stats */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:32px}
+@media(max-width:600px){.stats{grid-template-columns:repeat(2,1fr)}}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;position:relative;overflow:hidden;text-align:center}
+.stat::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--sc,var(--a1))}
+.sv{font-family:'Syne',sans-serif;font-size:30px;font-weight:800;color:var(--sc,var(--a1));line-height:1}
+.sl{font-size:11px;color:var(--muted);margin-top:4px;text-transform:uppercase;letter-spacing:1px}
+
+/* STEP 1: Seleccionar taller */
+#step1{margin-bottom:24px}
+.step-label{font-family:'Syne',sans-serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
+.talleres-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.taller-btn{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px;
+  cursor:pointer;text-align:left;transition:all .2s;position:relative;overflow:hidden}
+.taller-btn::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--tc)}
+.taller-btn:hover{border-color:var(--tc);transform:translateY(-2px)}
+.taller-btn.activo{border-color:var(--tc);background:var(--surf)}
+.tb-nombre{font-weight:600;font-size:13px;margin-bottom:4px}
+.tb-hora{font-size:11px;color:var(--muted);margin-bottom:8px}
+.tb-progress{height:4px;background:var(--border);border-radius:99px;overflow:hidden}
+.tb-fill{height:100%;border-radius:99px;background:var(--tc);transition:width .5s}
+.tb-count{font-size:11px;color:var(--muted);margin-top:6px}
+
+/* STEP 2: Lista de inscritos */
+#step2{display:none}
+.step2-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px}
+.back-btn{background:transparent;border:1px solid var(--border);color:var(--muted);padding:8px 16px;
+  border-radius:999px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s}
+.back-btn:hover{border-color:var(--a1);color:var(--a1)}
+.taller-activo-badge{display:flex;align-items:center;gap:8px}
+.taller-activo-dot{width:10px;height:10px;border-radius:50%;background:var(--tc2,var(--a1))}
+.taller-activo-nombre{font-family:'Syne',sans-serif;font-weight:700;font-size:16px}
+
+/* Buscador dentro del taller */
+.search-mini{position:relative;margin-bottom:20px}
+.search-mini input{width:100%;background:var(--card);border:1px solid var(--border);color:var(--text);
+  padding:11px 11px 11px 38px;border-radius:12px;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;transition:border-color .2s}
+.search-mini input:focus{border-color:var(--a1)}
+.search-mini .sico{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:15px}
+
+/* Botones marcar todos */
+.bulk-actions{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.bulk-btn{background:transparent;border:1px solid var(--border);color:var(--muted);padding:6px 14px;
+  border-radius:999px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s}
+.bulk-btn:hover{border-color:var(--a4);color:var(--a4)}
+
+/* Cards de personas */
+.personas-grid{display:flex;flex-direction:column;gap:8px}
+.persona-item{background:var(--card);border:1px solid var(--border);border-radius:14px;
+  padding:14px 18px;display:flex;align-items:center;gap:14px;transition:all .2s;cursor:pointer}
+.persona-item:hover{border-color:#2a2a3d99;background:#1e1e2e}
+.persona-item.presente{border-color:rgba(16,185,129,.4);background:rgba(16,185,129,.05)}
+.persona-avatar{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-family:'Syne',sans-serif;font-weight:800;font-size:14px;color:#fff;flex-shrink:0;transition:all .2s}
+.persona-info{flex:1;min-width:0}
+.persona-nombre{font-weight:600;font-size:14px}
+.persona-hijo{font-size:11px;color:var(--muted);margin-top:2px}
+.persona-grado{font-size:10px;color:var(--a2);margin-top:2px}
+.persona-check{width:32px;height:32px;border-radius:50%;border:2px solid var(--border);
+  display:flex;align-items:center;justify-content:center;font-size:16px;transition:all .2s;flex-shrink:0}
+.persona-item.presente .persona-check{background:var(--a4);border-color:var(--a4);color:#fff}
+.persona-hora{font-size:10px;color:var(--a4);margin-top:3px;display:none}
+.persona-item.presente .persona-hora{display:block}
+
+/* Confirmados globales */
+.conf-section{margin-top:32px;background:var(--card);border:1px solid var(--border);border-radius:20px;padding:24px}
+.conf-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px}
+.conf-title{font-family:'Syne',sans-serif;font-size:17px;font-weight:700}
+.badge-green{background:var(--a4);color:#fff;padding:2px 10px;border-radius:999px;font-size:11px;font-weight:700;margin-left:8px}
+.export-btn{background:transparent;border:1px solid var(--border);color:var(--muted);padding:7px 14px;
+  border-radius:999px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s}
+.export-btn:hover{border-color:var(--a2);color:var(--a2)}
+.conf-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.conf-tab{background:var(--surf);border:1px solid var(--border);color:var(--muted);padding:5px 12px;
+  border-radius:999px;font-size:11px;cursor:pointer;transition:all .2s}
+.conf-tab.active{background:var(--a1);border-color:var(--a1);color:#fff}
+.conf-list{display:flex;flex-direction:column;gap:6px;max-height:320px;overflow-y:auto}
+.conf-item{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surf);border-radius:10px}
+.conf-dot{width:8px;height:8px;border-radius:50%;background:var(--a4);flex-shrink:0}
+.conf-nombre{font-size:13px;font-weight:500;flex:1}
+.conf-meta{font-size:11px;color:var(--muted);text-align:right}
+.empty{text-align:center;padding:32px;color:var(--muted);font-size:13px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lbl">Escuela de Padres · 27 de mayo · Control de Asistencia</p>
+  <h1>Registro de <span>Asistencia</span></h1>
+  <p class="sub">Selecciona el taller y marca los padres que llegaron</p>
+
+  <!-- Stats globales -->
+  <div class="stats">
+    <div class="stat" style="--sc:#7c3aed"><div class="sv" id="stInscritos">0</div><div class="sl">Inscritos</div></div>
+    <div class="stat" style="--sc:#10b981"><div class="sv" id="stPresentes">0</div><div class="sl">Presentes</div></div>
+    <div class="stat" style="--sc:#f43f5e"><div class="sv" id="stAusentes">0</div><div class="sl">Ausentes</div></div>
+    <div class="stat" style="--sc:#06b6d4"><div class="sv" id="stPct">0%</div><div class="sl">Asistencia</div></div>
+  </div>
+
+  <!-- STEP 1: Elegir taller -->
+  <div id="step1">
+    <p class="step-label">Selecciona el taller</p>
+    <div class="talleres-grid" id="talleresGrid"></div>
+  </div>
+
+  <!-- STEP 2: Lista del taller -->
+  <div id="step2">
+    <div class="step2-header">
+      <button class="back-btn" onclick="volverStep1()">← Cambiar taller</button>
+      <div class="taller-activo-badge">
+        <div class="taller-activo-dot" id="activoDot"></div>
+        <div class="taller-activo-nombre" id="activoNombre"></div>
+      </div>
+      <div id="activoStats" style="font-size:13px;color:var(--muted)"></div>
+    </div>
+
+    <div class="search-mini">
+      <span class="sico">🔍</span>
+      <input type="text" id="searchInput" placeholder="Buscar por nombre del padre o del hijo/a..." oninput="renderLista()">
+    </div>
+
+    <div class="bulk-actions">
+      <button class="bulk-btn" onclick="marcarTodos()">✓ Marcar todos presentes</button>
+      <button class="bulk-btn" style="border-color:#f43f5e44;color:var(--a5)" onclick="desmarcarTodos()">✗ Desmarcar todos</button>
+    </div>
+
+    <div class="personas-grid" id="personasGrid"></div>
+  </div>
+
+  <!-- Confirmados globales -->
+  <div class="conf-section">
+    <div class="conf-head">
+      <div class="conf-title">Confirmados <span class="badge-green" id="confCount">0</span></div>
+      <div style="display:flex;gap:8px">
+        <button class="export-btn" onclick="exportarCSV()">⬇ CSV</button>
+        <button class="export-btn" style="color:#f43f5e;border-color:#f43f5e44" onclick="limpiarTodo()">🗑 Limpiar</button>
+      </div>
+    </div>
+    <div class="conf-tabs" id="confTabs">
+      <button class="conf-tab active" data-taller="todos">Todos</button>
+    </div>
+    <div class="conf-list" id="confList"></div>
+    <div class="empty" id="confEmpty">Aún no hay asistentes marcados</div>
+  </div>
+</div>
+
+<script>
+const TALLERES_INFO = {
+  "Corrigiendo con respeto":    {hora:"3:30-5:00 pm", espacio:"Auditorio"},
+  "Educar emociones":           {hora:"3:30-5:00 pm", espacio:"2do sec."},
+  "Conectando con mis hijos":   {hora:"5:30-7:00 pm", espacio:"2do sec."},
+  "Hijos en la Era Digital":    {hora:"3:30-5:00 pm", espacio:"1ro sec."},
+  "Familias Saludables (30)":   {hora:"5:30-7:00 pm", espacio:"3ro sec."},
+  "Familias Saludables (70)":   {hora:"3:30-5:00 pm", espacio:"Auditorio"},
+  "Criar con firmeza y carino": {hora:"5:30-7:00 pm", espacio:"1ro sec."},
+  "Decisiones que protegen":    {hora:"5:30-7:00 pm", espacio:"3ro sec."},
+};
+
+const COLORES = ['#7c3aed','#06b6d4','#f59e0b','#10b981','#f43f5e','#8b5cf6','#0ea5e9','#84cc16'];
+const TALLER_COLOR = {};
+Object.keys(TALLERES_INFO).forEach((t,i) => TALLER_COLOR[t] = COLORES[i % COLORES.length]);
+
+const NOMBRES_DATA = __NOMBRES_JSON__;
+
+// Estado
+const STORAGE_KEY = 'asistencia_ep_2026';
+let asistencia = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+// asistencia[norm][taller] = {nombre, grado, hora}
+
+let tallerSeleccionado = null;
+
+function normNombre(n){ return String(n).trim().toLowerCase().replace(/\s+/g,' '); }
+
+// Lista plana de personas
+const todasPersonas = [];
+Object.entries(NOMBRES_DATA).forEach(([grado, personas]) => {
+  personas.forEach(p => todasPersonas.push({...p, grado}));
+});
+
+// Personas por taller
+const personasPorTaller = {};
+todasPersonas.forEach(p => {
+  p.talleres.forEach(t => {
+    if(!personasPorTaller[t]) personasPorTaller[t] = [];
+    personasPorTaller[t].push(p);
+  });
+});
+
+// ── STEP 1: Tarjetas de talleres ─────────────────────────────────
+function renderTalleres(){
+  const grid = document.getElementById('talleresGrid');
+  grid.innerHTML = '';
+  Object.entries(TALLERES_INFO).forEach(([nombre, info], i) => {
+    const color = TALLER_COLOR[nombre] || COLORES[i];
+    const personas = personasPorTaller[nombre] || [];
+    const presentes = personas.filter(p => asistencia[normNombre(p.asistente)]?.[nombre]).length;
+    const pct = personas.length ? Math.round(presentes/personas.length*100) : 0;
+
+    const btn = document.createElement('div');
+    btn.className = 'taller-btn' + (tallerSeleccionado===nombre?' activo':'');
+    btn.style.setProperty('--tc', color);
+    btn.innerHTML =
+      '<div class="tb-nombre">'+nombre+'</div>'+
+      '<div class="tb-hora">'+info.hora+' · '+info.espacio+'</div>'+
+      '<div class="tb-progress"><div class="tb-fill" style="width:'+pct+'%"></div></div>'+
+      '<div class="tb-count">'+presentes+' / '+personas.length+' presentes</div>';
+    btn.onclick = () => seleccionarTaller(nombre, color);
+    grid.appendChild(btn);
+  });
+}
+
+function seleccionarTaller(nombre, color){
+  tallerSeleccionado = nombre;
+  document.getElementById('step1').style.display = 'none';
+  document.getElementById('step2').style.display = 'block';
+  document.getElementById('activoNombre').textContent = nombre;
+  document.getElementById('activoDot').style.background = color;
+  document.getElementById('step2').style.setProperty('--tc2', color);
+  document.getElementById('searchInput').value = '';
+  renderLista();
+}
+
+function volverStep1(){
+  tallerSeleccionado = null;
+  document.getElementById('step2').style.display = 'none';
+  document.getElementById('step1').style.display = 'block';
+  renderTalleres();
+  actualizarStats();
+}
+
+// ── STEP 2: Lista de personas ────────────────────────────────────
+function renderLista(){
+  const query = normNombre(document.getElementById('searchInput').value);
+  const grid = document.getElementById('personasGrid');
+  grid.innerHTML = '';
+
+  const personas = (personasPorTaller[tallerSeleccionado] || []).filter(p => {
+    if(!query || query.length < 2) return true;
+    return normNombre(p.asistente).includes(query) || normNombre(p.estudiante).includes(query);
+  });
+
+  if(personas.length === 0){
+    grid.innerHTML = '<div class="empty">No se encontraron resultados</div>';
+    return;
+  }
+
+  // Ordenar: ausentes primero, luego presentes
+  personas.sort((a,b) => {
+    const pa = !!asistencia[normNombre(a.asistente)]?.[tallerSeleccionado];
+    const pb = !!asistencia[normNombre(b.asistente)]?.[tallerSeleccionado];
+    if(pa !== pb) return pa ? 1 : -1;
+    return a.asistente.localeCompare(b.asistente);
+  });
+
+  personas.forEach(p => {
+    const norm = normNombre(p.asistente);
+    const reg = asistencia[norm]?.[tallerSeleccionado];
+    const presente = !!reg;
+    const initials = p.asistente.split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase();
+    const color = presente ? '#10b981' : (TALLER_COLOR[tallerSeleccionado] || '#7c3aed');
+
+    const item = document.createElement('div');
+    item.className = 'persona-item' + (presente?' presente':'');
+    item.onclick = () => toggleAsistencia(norm, p.asistente, p.grado);
+    item.innerHTML =
+      '<div class="persona-avatar" style="background:linear-gradient(135deg,'+color+','+color+'88)">'+initials+'</div>'+
+      '<div class="persona-info">'+
+        '<div class="persona-nombre">'+p.asistente+'</div>'+
+        (p.estudiante?'<div class="persona-hijo">Hijo/a: '+p.estudiante+'</div>':'')+
+        '<div class="persona-grado">'+p.grado+'</div>'+
+        '<div class="persona-hora">'+(reg?'✓ Marcado a las '+reg.hora:'')+'</div>'+
+      '</div>'+
+      '<div class="persona-check">'+(presente?'✓':'')+'</div>';
+    grid.appendChild(item);
+  });
+
+  // Stats del taller activo
+  const total = (personasPorTaller[tallerSeleccionado]||[]).length;
+  const pres = (personasPorTaller[tallerSeleccionado]||[]).filter(p=>asistencia[normNombre(p.asistente)]?.[tallerSeleccionado]).length;
+  document.getElementById('activoStats').textContent = pres+' de '+total+' presentes';
+  actualizarStats();
+}
+
+function toggleAsistencia(norm, nombreReal, grado){
+  if(!asistencia[norm]) asistencia[norm] = {};
+  if(asistencia[norm][tallerSeleccionado]){
+    delete asistencia[norm][tallerSeleccionado];
+  } else {
+    const hora = new Date().toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'});
+    asistencia[norm][tallerSeleccionado] = {nombre: nombreReal, grado, hora};
+  }
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(asistencia));
+  renderLista();
+  renderConfirmados();
+}
+
+function marcarTodos(){
+  const personas = personasPorTaller[tallerSeleccionado] || [];
+  const hora = new Date().toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'});
+  personas.forEach(p => {
+    const norm = normNombre(p.asistente);
+    if(!asistencia[norm]) asistencia[norm] = {};
+    if(!asistencia[norm][tallerSeleccionado]){
+      asistencia[norm][tallerSeleccionado] = {nombre:p.asistente, grado:p.grado, hora};
+    }
+  });
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(asistencia));
+  renderLista(); renderConfirmados();
+}
+
+function desmarcarTodos(){
+  const personas = personasPorTaller[tallerSeleccionado] || [];
+  personas.forEach(p => {
+    const norm = normNombre(p.asistente);
+    if(asistencia[norm]) delete asistencia[norm][tallerSeleccionado];
+  });
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(asistencia));
+  renderLista(); renderConfirmados();
+}
+
+// ── Confirmados ──────────────────────────────────────────────────
+let confTabActivo = 'todos';
+function renderConfirmados(){
+  // Tabs
+  const tabsDiv = document.getElementById('confTabs');
+  tabsDiv.innerHTML = '<button class="conf-tab'+(confTabActivo==='todos'?' active':'')+'" data-taller="todos" onclick="setConfTab(\'todos\')">Todos</button>';
+  Object.keys(TALLERES_INFO).forEach(t => {
+    const items = getConfItems(t);
+    if(items.length > 0){
+      tabsDiv.innerHTML += '<button class="conf-tab'+(confTabActivo===t?' active':'')+'" data-taller="'+t+'" onclick="setConfTab(\''+t.replace(/'/g,"\\'")+'\')" style="border-color:'+TALLER_COLOR[t]+'44">'+t+' ('+items.length+')</button>';
+    }
+  });
+
+  const items = getConfItems(confTabActivo);
+  const list = document.getElementById('confList');
+  const empty = document.getElementById('confEmpty');
+  const count = document.getElementById('confCount');
+
+  const allItems = getConfItems('todos');
+  count.textContent = allItems.length;
+
+  if(items.length === 0){ list.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display = 'none';
+  list.innerHTML = '';
+  items.sort((a,b)=>a.nombre.localeCompare(b.nombre)).forEach(item => {
+    const c = TALLER_COLOR[item.taller] || '#10b981';
+    const div = document.createElement('div');
+    div.className = 'conf-item';
+    div.innerHTML =
+      '<div class="conf-dot" style="background:'+c+'"></div>'+
+      '<div class="conf-nombre">'+item.nombre+'</div>'+
+      '<div class="conf-meta">'+item.taller+'<br>'+item.hora+'</div>';
+    list.appendChild(div);
+  });
+}
+
+function getConfItems(filtroTaller){
+  const items = [];
+  Object.values(asistencia).forEach(talleres => {
+    Object.entries(talleres).forEach(([taller, info]) => {
+      if(info && (filtroTaller==='todos' || filtroTaller===taller)){
+        items.push({...info, taller});
+      }
+    });
+  });
+  return items;
+}
+
+function setConfTab(t){ confTabActivo = t; renderConfirmados(); }
+
+// ── Stats globales ───────────────────────────────────────────────
+function actualizarStats(){
+  const totalInscritos = todasPersonas.length;
+  const presentesSet = new Set();
+  Object.entries(asistencia).forEach(([norm, talleres]) => {
+    if(Object.values(talleres).some(v=>v)) presentesSet.add(norm);
+  });
+  const presentes = presentesSet.size;
+  document.getElementById('stInscritos').textContent  = totalInscritos;
+  document.getElementById('stPresentes').textContent  = presentes;
+  document.getElementById('stAusentes').textContent   = totalInscritos - presentes;
+  document.getElementById('stPct').textContent        = totalInscritos ? Math.round(presentes/totalInscritos*100)+'%' : '0%';
+}
+
+// ── Exportar ─────────────────────────────────────────────────────
+function exportarCSV(){
+  let csv = '\uFEFFNombre,Taller,Grado,Hora\n';
+  getConfItems('todos').sort((a,b)=>a.nombre.localeCompare(b.nombre)).forEach(i => {
+    csv += '"'+i.nombre+'","'+i.taller+'","'+i.grado+'","'+i.hora+'"\n';
+  });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+  a.download = 'asistencia_'+new Date().toLocaleDateString('es-PE').replace(/\//g,'-')+'.csv';
+  a.click();
+}
+
+function limpiarTodo(){
+  if(!confirm('¿Borrar todos los registros de asistencia?')) return;
+  asistencia = {};
+  localStorage.removeItem(STORAGE_KEY);
+  renderTalleres(); renderConfirmados(); actualizarStats();
+  if(tallerSeleccionado) renderLista();
+}
+
+// Init
+renderTalleres();
+renderConfirmados();
+actualizarStats();
+</script>
+</body>
+</html>
