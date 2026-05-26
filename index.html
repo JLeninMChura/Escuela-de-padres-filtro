@@ -2,343 +2,370 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dashboard — Escuela de Padres</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dashboard Escuela de Padres</title>
+<script src="chartjs.min.js"></script>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap');
-  :root {
-    --bg:#0d0d14;--surface:#15151f;--card:#1c1c2a;--border:#2a2a3d;
-    --a1:#7c3aed;--a2:#06b6d4;--a3:#f59e0b;--a4:#10b981;--a5:#f43f5e;
-    --text:#e8e8f0;--muted:#7a7a9a;
-  }
-  *{margin:0;padding:0;box-sizing:border-box}
-  body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;overflow-x:hidden}
-  body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 50% at 20% 10%,rgba(124,58,237,.12) 0%,transparent 60%),radial-gradient(ellipse 60% 40% at 80% 80%,rgba(6,182,212,.08) 0%,transparent 55%);pointer-events:none;z-index:0}
-  .wrap{position:relative;z-index:1;max-width:1280px;margin:0 auto;padding:48px 24px}
-  .label-top{font-family:'Syne',sans-serif;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--a2);margin-bottom:12px}
-  h1{font-family:'Syne',sans-serif;font-size:clamp(26px,5vw,50px);font-weight:800;line-height:1.1}
-  h1 span{color:var(--a1)}
-  .subtitle{margin-top:8px;color:var(--muted);font-size:14px}
-  header{margin-bottom:44px}
-
-  /* KPIs */
-  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:36px}
-  .kpi{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:22px 18px;position:relative;overflow:hidden;animation:fadeUp .5s ease both}
-  .kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--kc,var(--a1))}
-  .kpi-val{font-family:'Syne',sans-serif;font-size:38px;font-weight:800;color:var(--kc,var(--a1));line-height:1}
-  .kpi-label{font-size:11px;color:var(--muted);margin-top:6px;text-transform:uppercase;letter-spacing:1px}
-
-  /* grid */
-  .g2{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-bottom:22px}
-  .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:22px;margin-bottom:22px}
-  .g1{margin-bottom:22px}
-  @media(max-width:900px){.g2,.g3{grid-template-columns:1fr}}
-
-  /* cards */
-  .card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:26px;animation:fadeUp .6s ease both}
-  .ct{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
-  .cs{font-size:18px;font-weight:500;margin-bottom:20px}
-  .ch{position:relative}
-
-  /* filters */
-  .filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
-  .fb{background:var(--surface);border:1px solid var(--border);color:var(--muted);padding:5px 13px;border-radius:999px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s}
-  .fb:hover,.fb.active{background:var(--a1);border-color:var(--a1);color:#fff}
-
-  /* table */
-  .tw{overflow-x:auto;margin-top:4px}
-  table{width:100%;border-collapse:collapse;font-size:13px}
-  th{background:var(--surface);color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-size:10px;padding:11px 13px;text-align:left;border-bottom:1px solid var(--border)}
-  td{padding:10px 13px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:middle}
-  tr:last-child td{border-bottom:none}
-  tr:hover td{background:rgba(124,58,237,.05)}
-  .badge{display:inline-block;padding:2px 10px;border-radius:999px;font-size:11px;font-weight:600;background:rgba(124,58,237,.15);color:var(--a1)}
-  .badge-green{background:rgba(16,185,129,.15);color:var(--a4)}
-  .badge-red{background:rgba(244,63,94,.15);color:var(--a5)}
-  .badge-yellow{background:rgba(245,158,11,.15);color:var(--a3)}
-  .bi{display:flex;align-items:center;gap:8px}
-  .bb{flex:1;height:7px;background:var(--border);border-radius:99px;overflow:hidden}
-  .bf{height:100%;border-radius:99px;transition:width .8s ease}
-
-  /* ponente card */
-  .ponente-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
-  .pcard{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;position:relative;overflow:hidden}
-  .pcard::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--pc,var(--a1))}
-  .pcard-name{font-family:'Syne',sans-serif;font-weight:700;font-size:13px;margin-bottom:6px}
-  .pcard-meta{font-size:11px;color:var(--muted);display:flex;flex-direction:column;gap:3px}
-  .pcard-tag{display:inline-block;margin-top:8px;padding:2px 9px;border-radius:999px;font-size:10px;background:rgba(124,58,237,.15);color:var(--a1);font-weight:600}
-  .pcard-hora{font-size:12px;color:var(--a2);font-weight:500;margin-top:4px}
-
-  /* gauge mini */
-  .occ-wrap{display:flex;align-items:center;gap:8px;font-size:12px}
-  .occ-num{font-family:'Syne',sans-serif;font-weight:700;min-width:38px}
-
-  @keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
-  footer{text-align:center;color:var(--muted);font-size:11px;margin-top:56px}
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap');
+:root{--bg:#0d0d14;--card:#1c1c2a;--border:#2a2a3d;--surf:#15151f;
+  --a1:#7c3aed;--a2:#06b6d4;--a3:#f59e0b;--a4:#10b981;--a5:#f43f5e;
+  --text:#e8e8f0;--muted:#7a7a9a}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif}
+body::before{content:'';position:fixed;inset:0;
+  background:radial-gradient(ellipse 80% 50% at 20% 10%,rgba(124,58,237,.12),transparent 60%),
+             radial-gradient(ellipse 60% 40% at 80% 80%,rgba(6,182,212,.08),transparent 55%);
+  pointer-events:none;z-index:0}
+.wrap{position:relative;z-index:1;max-width:1280px;margin:0 auto;padding:48px 24px}
+.lbl{font-family:'Syne',sans-serif;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--a2);margin-bottom:12px}
+h1{font-family:'Syne',sans-serif;font-size:clamp(26px,5vw,50px);font-weight:800}
+h1 span{color:var(--a1)}
+.sub{color:var(--muted);font-size:14px;margin-top:8px}
+header{margin-bottom:44px}
+.upd{display:inline-flex;align-items:center;gap:6px;background:rgba(16,185,129,.1);
+  border:1px solid rgba(16,185,129,.3);color:#10b981;padding:4px 12px;
+  border-radius:999px;font-size:11px;margin-top:10px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:14px;margin-bottom:36px}
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:22px 18px;position:relative;overflow:hidden}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--kc,var(--a1))}
+.kv{font-family:'Syne',sans-serif;font-size:38px;font-weight:800;color:var(--kc,var(--a1));line-height:1}
+.kl{font-size:11px;color:var(--muted);margin-top:6px;text-transform:uppercase;letter-spacing:1px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-bottom:22px}
+.g1{margin-bottom:22px}
+@media(max-width:860px){.g2{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:26px}
+.ct{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.cs{font-size:18px;font-weight:500;margin-bottom:20px}
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.fb{background:var(--surf);border:1px solid var(--border);color:var(--muted);
+  padding:5px 13px;border-radius:999px;font-size:12px;cursor:pointer;
+  font-family:'DM Sans',sans-serif;transition:all .2s}
+.fb:hover,.fb.active{background:var(--a1);border-color:var(--a1);color:#fff}
+.tw{overflow-x:auto;margin-top:4px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:var(--surf);color:var(--muted);text-transform:uppercase;
+  letter-spacing:1px;font-size:10px;padding:11px 13px;text-align:left;
+  border-bottom:1px solid var(--border)}
+td{padding:10px 13px;border-bottom:1px solid var(--border);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(124,58,237,.05)}
+.badge{display:inline-block;padding:2px 10px;border-radius:999px;font-size:11px;
+  font-weight:600;background:rgba(124,58,237,.15);color:var(--a1)}
+.badge-red{background:rgba(244,63,94,.15);color:var(--a5)}
+.badge-green{background:rgba(16,185,129,.15);color:var(--a4)}
+.badge-yellow{background:rgba(245,158,11,.15);color:var(--a3)}
+.bi{display:flex;align-items:center;gap:8px}
+.bb{flex:1;height:7px;background:var(--border);border-radius:99px;overflow:hidden}
+.bf{height:100%;border-radius:99px}
+.taller-tag{display:inline-block;margin:2px;padding:2px 8px;border-radius:999px;
+  font-size:10px;font-weight:600;background:rgba(6,182,212,.12);color:#06b6d4}
+.pg{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:14px}
+.pc{background:var(--surf);border:1px solid var(--border);border-radius:14px;
+  padding:18px;position:relative;overflow:hidden}
+.pc::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--pc,var(--a1))}
+.pn{font-family:'Syne',sans-serif;font-weight:700;font-size:13px;margin-bottom:6px}
+.pm{font-size:11px;color:var(--muted);display:flex;flex-direction:column;gap:3px}
+.pt{display:inline-block;margin-top:8px;padding:2px 9px;border-radius:999px;
+  font-size:10px;background:rgba(124,58,237,.15);color:var(--a1);font-weight:600}
+footer{text-align:center;color:var(--muted);font-size:11px;margin-top:56px}
 </style>
 </head>
 <body>
 <div class="wrap">
+<header>
+  <p class="lbl">Escuela de Padres · 27 de mayo · Reporte de Asistencia</p>
+  <h1>Dashboard de <span>Participacion</span></h1>
+  <p class="sub">Consolidado de 8 talleres · 18 grados y secciones</p>
+  <div class="upd">Actualizado: 25/05/2026 20:30</div>
+</header>
 
-  <header>
-    <p class="label-top">Escuela de Padres · 27 de mayo · Reporte de Asistencia</p>
-    <h1>Dashboard de <span>Participación</span></h1>
-    <p class="subtitle">Consolidado de 8 talleres · 18 grados y secciones · Todos los niveles</p>
-  </header>
+<div class="kpis">
+  <div class="kpi" style="--kc:#7c3aed"><div class="kv">185</div><div class="kl">Total inscripciones</div></div>
+  <div class="kpi" style="--kc:#06b6d4"><div class="kv">156</div><div class="kl">Personas unicas</div></div>
+  <div class="kpi" style="--kc:#f59e0b"><div class="kv">8</div><div class="kl">Talleres</div></div>
+  <div class="kpi" style="--kc:#10b981"><div class="kv">18</div><div class="kl">Grados / Secciones</div></div>
+  <div class="kpi" style="--kc:#f43f5e"><div class="kv">300</div><div class="kl">Cupos totales</div></div>
+  <div class="kpi" style="--kc:#8b5cf6"><div class="kv">62%</div><div class="kl">Ocupacion global</div></div>
+</div>
 
-  <!-- KPIs -->
-  <div class="kpis">
-    <div class="kpi" style="--kc:#7c3aed;animation-delay:0s"><div class="kpi-val">163</div><div class="kpi-label">Total registros</div></div>
-    <div class="kpi" style="--kc:#06b6d4;animation-delay:.08s"><div class="kpi-val">8</div><div class="kpi-label">Talleres</div></div>
-    <div class="kpi" style="--kc:#f59e0b;animation-delay:.16s"><div class="kpi-val">18</div><div class="kpi-label">Grados / Secciones</div></div>
-    <div class="kpi" style="--kc:#10b981;animation-delay:.24s"><div class="kpi-val">280</div><div class="kpi-label">Cupos totales</div></div>
-    <div class="kpi" style="--kc:#f43f5e;animation-delay:.32s"><div class="kpi-val">58%</div><div class="kpi-label">Ocupación global</div></div>
-    <div class="kpi" style="--kc:#8b5cf6;animation-delay:.40s"><div class="kpi-val">44</div><div class="kpi-label">Máx. un taller</div></div>
+<div class="g2">
+  <div class="card"><p class="ct">Comparativa</p><p class="cs">Asistentes vs Cupo por taller</p>
+    <div style="height:300px;position:relative"><canvas id="cOcc"></canvas></div></div>
+  <div class="card"><p class="ct">Distribucion</p><p class="cs">Asistentes por taller</p>
+    <div style="height:300px;position:relative"><canvas id="cDona"></canvas></div></div>
+</div>
+<div class="g2">
+  <div class="card"><p class="ct">Participacion</p><p class="cs">Grados por asistencia</p>
+    <div style="height:320px;position:relative"><canvas id="cGrados"></canvas></div></div>
+  <div class="card"><p class="ct">Horario</p><p class="cs">Asistencia por turno</p>
+    <div style="height:320px;position:relative"><canvas id="cTurno"></canvas></div></div>
+</div>
+<div class="g1">
+  <div class="card"><p class="ct">Analisis cruzado</p><p class="cs">Participacion por grado en cada taller</p>
+    <div class="filters" id="fNivel">
+      <button class="fb active" data-n="todos">Todos</button>
+      <button class="fb" data-n="inicial">Inicial</button>
+      <button class="fb" data-n="primaria">Primaria</button>
+      <button class="fb" data-n="secundaria">Secundaria</button>
+    </div>
+    <div style="height:340px;position:relative"><canvas id="cStack"></canvas></div>
   </div>
+</div>
+<div class="g1">
+  <div class="card"><p class="ct">Detalle por taller</p><p class="cs">Cupos, asistentes y ocupacion</p>
+  <div class="tw"><table>
+    <thead><tr><th>#</th><th>Taller</th><th>Ponente</th><th>Hora</th><th>Espacio</th><th>Cupo</th><th>Asist.</th><th>Ocupacion</th><th>Nivel</th></tr></thead>
+    <tbody id="tbT"></tbody>
+  </table></div></div>
+</div>
+<div class="g1">
+  <div class="card"><p class="ct">Detalle por grado</p><p class="cs">Participacion acumulada</p>
+  <div class="tw"><table>
+    <thead><tr><th>Grado / Seccion</th><th>Total</th><th>Talleres</th><th>Participacion</th></tr></thead>
+    <tbody id="tbG"></tbody>
+  </table></div></div>
+</div>
 
-  <!-- ROW 1 -->
-  <div class="g2">
-    <div class="card" style="animation-delay:.2s">
-      <p class="ct">Comparativa</p>
-      <p class="cs">Asistentes vs Cupo por taller</p>
-      <div class="ch" style="height:300px"><canvas id="cOcc"></canvas></div>
-    </div>
-    <div class="card" style="animation-delay:.28s">
-      <p class="ct">Distribución</p>
-      <p class="cs">Asistentes por taller</p>
-      <div class="ch" style="height:300px"><canvas id="cDona"></canvas></div>
-    </div>
+<div class="g1">
+  <div class="card">
+    <p class="ct">Alerta</p>
+    <p class="cs">Posibles inscripciones duplicadas</p>
+    <div class="tw"><table>
+      <thead><tr><th>Taller</th><th>Alumno</th><th>Estado</th></tr></thead>
+      <tbody><tr><td>Corrigiendo con respeto</td><td>Fabián Ronaldo Ticona Pariapaza </td><td><span class='badge badge-red'>3x inscrito</span></td></tr><tr><td>Conectando con mis hijos</td><td>Fabián Ronaldo Ticona Pariapaza </td><td><span class='badge badge-red'>2x inscrito</span></td></tr><tr><td>Hijos en la Era Digital</td><td>Fabián Ronaldo Ticona Pariapaza </td><td><span class='badge badge-red'>3x inscrito</span></td></tr><tr><td>Hijos en la Era Digital</td><td>Cielo Sara Isabel Mamani Mamani </td><td><span class='badge badge-red'>2x inscrito</span></td></tr><tr><td>Familias Saludables (30)</td><td>Mháximo </td><td><span class='badge badge-red'>2x inscrito</span></td></tr><tr><td>Criar con firmeza y carino</td><td>Fabián Ronaldo Ticona Pariapaza </td><td><span class='badge badge-red'>2x inscrito</span></td></tr></tbody>
+    </table></div>
   </div>
-
-  <!-- ROW 2 -->
-  <div class="g2">
-    <div class="card" style="animation-delay:.34s">
-      <p class="ct">Participación</p>
-      <p class="cs">Top grados por asistencia</p>
-      <div class="ch" style="height:320px"><canvas id="cGrados"></canvas></div>
-    </div>
-    <div class="card" style="animation-delay:.40s">
-      <p class="ct">Horario</p>
-      <p class="cs">Asistencia por turno</p>
-      <div class="ch" style="height:320px"><canvas id="cTurno"></canvas></div>
-    </div>
+</div>
+<div class="g1">
+  <div class="card"><p class="ct">Equipo</p><p class="cs">Ponentes y talleres</p>
+    <div class="pg" id="pgDiv"></div>
   </div>
+</div>
 
-  <!-- ROW 3: stacked por nivel -->
-  <div class="g1">
-    <div class="card" style="animation-delay:.46s">
-      <p class="ct">Análisis cruzado</p>
-      <p class="cs">Participación por grado en cada taller</p>
-      <div class="filters" id="filtroNivel">
-        <button class="fb active" data-nivel="todos">Todos</button>
-        <button class="fb" data-nivel="inicial">Inicial</button>
-        <button class="fb" data-nivel="primaria">Primaria</button>
-        <button class="fb" data-nivel="secundaria">Secundaria</button>
+<div class="g1">
+  <div class="card">
+    <p class="ct">Directorio por salon</p>
+    <p class="cs">Inscritos por grado y seccion</p>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:20px">
+      <select id="selGrado" style="background:#15151f;border:1px solid #2a2a3d;color:#e8e8f0;padding:8px 14px;border-radius:10px;font-size:13px;font-family:DM Sans,sans-serif;cursor:pointer;min-width:240px">
+        <option value="">-- Selecciona un grado/seccion --</option>
+      </select>
+      <select id="selTaller" style="background:#15151f;border:1px solid #2a2a3d;color:#e8e8f0;padding:8px 14px;border-radius:10px;font-size:13px;font-family:DM Sans,sans-serif;cursor:pointer;min-width:220px">
+        <option value="todos">Todos los talleres</option>
+      </select>
+      <span id="countBadge" style="display:none;background:rgba(124,58,237,.15);color:#7c3aed;padding:4px 12px;border-radius:999px;font-size:12px;font-weight:600"></span>
+    </div>
+    <div id="listaInscritos" style="display:none">
+      <div class="tw">
+        <table>
+          <thead><tr><th>#</th><th>Nombre del asistente</th><th>Nombre del hijo/a</th><th>Talleres inscritos</th></tr></thead>
+          <tbody id="tbInscritos"></tbody>
+        </table>
       </div>
-      <div class="ch" style="height:340px"><canvas id="cStack"></canvas></div>
+    </div>
+    <div id="placeholderDir" style="text-align:center;padding:40px;color:#7a7a9a;font-size:14px">
+      Selecciona un grado para ver los inscritos
     </div>
   </div>
+</div>
 
-  <!-- ROW 4: tabla ocupación por taller -->
-  <div class="g1">
-    <div class="card" style="animation-delay:.50s">
-      <p class="ct">Detalle por taller</p>
-      <p class="cs">Cupos, asistentes y % de ocupación</p>
-      <div class="tw"><table>
-        <thead><tr><th>#</th><th>Taller</th><th>Ponente</th><th>Horario</th><th>Espacio</th><th>Cupo</th><th>Asistentes</th><th>Ocupación</th><th>Recomendado</th></tr></thead>
-        <tbody id="tbTalleres"></tbody>
-      </table></div>
-    </div>
-  </div>
-
-  <!-- ROW 5: tabla grados -->
-  <div class="g1">
-    <div class="card" style="animation-delay:.54s">
-      <p class="ct">Detalle por grado</p>
-      <p class="cs">Participación acumulada de cada sección</p>
-      <div class="tw"><table>
-        <thead><tr><th>Grado / Sección</th><th>Total</th><th>Talleres asistidos</th><th>Participación relativa</th></tr></thead>
-        <tbody id="tbGrados"></tbody>
-      </table></div>
-    </div>
-  </div>
-
-  <!-- ROW 6: ponentes -->
-  <div class="g1">
-    <div class="card" style="animation-delay:.58s">
-      <p class="ct">Equipo</p>
-      <p class="cs">Ponentes y sus talleres</p>
-      <div class="ponente-grid" id="ponentes"></div>
-    </div>
-  </div>
-
-  <footer>Escuela de Padres · 27 de mayo de 2026 · Reporte generado automáticamente</footer>
+<footer>Escuela de Padres · 27 de mayo de 2026 · Datos desde Google Sheets</footer>
 </div>
 
 <script>
-const TALLERES = [
-  {name:"Educar emociones",            cupo:25, asist:25, ponente:"Psic. Samy Manrique Enriquez",  hora:"3:30–5:00 pm", espacio:"2do sec.",   rec:"Inicial y Primaria",  turno:"tarde1"},
-  {name:"Hijos en la Era Digital",     cupo:25, asist:19, ponente:"Psic. Delma Asuncion Quispe",   hora:"3:30–5:00 pm", espacio:"1ro sec.",    rec:"Inicial y Primaria",  turno:"tarde1"},
-  {name:"Familias Saludables (70)",    cupo:70, asist:6,  ponente:"Lic. Virginia León Gonzales",   hora:"3:30–5:00 pm", espacio:"Auditorio",   rec:"Inicial y Primaria",  turno:"tarde1"},
-  {name:"Corrigiendo con respeto",     cupo:70, asist:44, ponente:"Psic. Abel Alex Sumi León",     hora:"3:30–5:00 pm", espacio:"Auditorio",   rec:"Inicial y Primaria",  turno:"tarde1"},
-  {name:"Conectando con mis hijos",    cupo:25, asist:22, ponente:"Psic. Samy Manrique Enriquez",  hora:"5:30–7:00 pm", espacio:"2do sec.",   rec:"Secundaria",           turno:"tarde2"},
-  {name:"Criar con firmeza y cariño",  cupo:25, asist:22, ponente:"Psic. Abel Alex Sumi León",     hora:"5:30–7:00 pm", espacio:"1ro sec.",    rec:"Secundaria",           turno:"tarde2"},
-  {name:"Decisiones que protegen",     cupo:30, asist:9,  ponente:"Psic. Delma Asuncion Quispe",   hora:"5:30–7:00 pm", espacio:"3ro sec.",    rec:"Secundaria",           turno:"tarde2"},
-  {name:"Familias Saludables (30)",    cupo:30, asist:16, ponente:"Lic. Virginia León Gonzales",   hora:"5:30–7:00 pm", espacio:"3ro sec.",    rec:"Secundaria",           turno:"tarde2"},
-];
-
-// Map taller name in data to TALLERES name
-const NAME_MAP = {
-  "Educar emociones":"Educar emociones",
-  "Hijos en la Era Digital":"Hijos en la Era Digital",
-  "Familias Saludables (70 cupos)":"Familias Saludables (70)",
-  "Corrigiendo con respeto":"Corrigiendo con respeto",
-  "Conectando con mis hijos":"Conectando con mis hijos",
-  "Criar con firmeza y cariño":"Criar con firmeza y cariño",
-  "Decisiones que protegen":"Decisiones que protegen",
-  "Familias Saludables (30 cupos)":"Familias Saludables (30)",
-};
-
-const POR_GRADO = {
-  "Inicial 3 años":{"total":5,"talleres":{"Familias Saludables (30)":3,"Hijos en la Era Digital":1,"Familias Saludables (70)":1}},
-  "Inicial 4 años":{"total":17,"talleres":{"Familias Saludables (30)":3,"Criar con firmeza y cariño":3,"Conectando con mis hijos":3,"Corrigiendo con respeto":7,"Educar emociones":1}},
-  "Inicial 5 años":{"total":14,"talleres":{"Conectando con mis hijos":1,"Hijos en la Era Digital":3,"Corrigiendo con respeto":8,"Educar emociones":2}},
-  "1ro Primaria \"Tales de Mileto\"":{"total":8,"talleres":{"Familias Saludables (30)":1,"Criar con firmeza y cariño":1,"Corrigiendo con respeto":5,"Educar emociones":1}},
-  "2do Primaria \"Cáceres\"":{"total":11,"talleres":{"Decisiones que protegen":1,"Criar con firmeza y cariño":2,"Conectando con mis hijos":1,"Hijos en la Era Digital":3,"Corrigiendo con respeto":3,"Educar emociones":1}},
-  "2do Primaria \"Churata\"":{"total":8,"talleres":{"Decisiones que protegen":1,"Conectando con mis hijos":2,"Hijos en la Era Digital":1,"Familias Saludables (70)":1,"Educar emociones":3}},
-  "3ro Primaria \"Paredes\"":{"total":19,"talleres":{"Decisiones que protegen":1,"Familias Saludables (30)":1,"Criar con firmeza y cariño":2,"Conectando con mis hijos":3,"Hijos en la Era Digital":3,"Corrigiendo con respeto":7,"Educar emociones":2}},
-  "3ro Primaria \"Závala\"":{"total":13,"talleres":{"Criar con firmeza y cariño":4,"Conectando con mis hijos":3,"Hijos en la Era Digital":2,"Corrigiendo con respeto":3,"Educar emociones":1}},
-  "4to Primaria \"Jilapa\"":{"total":4,"talleres":{"Conectando con mis hijos":2,"Familias Saludables (70)":1,"Corrigiendo con respeto":1}},
-  "5to Primaria \"Arriola\"":{"total":10,"talleres":{"Familias Saludables (30)":2,"Criar con firmeza y cariño":2,"Corrigiendo con respeto":3,"Educar emociones":3}},
-  "5to Primaria \"Vásquez\"":{"total":6,"talleres":{"Criar con firmeza y cariño":1,"Hijos en la Era Digital":1,"Corrigiendo con respeto":1,"Educar emociones":3}},
-  "6to Primaria \"Oquendo\"":{"total":10,"talleres":{"Familias Saludables (30)":1,"Criar con firmeza y cariño":3,"Conectando con mis hijos":2,"Hijos en la Era Digital":2,"Educar emociones":2}},
-  "6to Primaria \"Padilla\"":{"total":7,"talleres":{"Criar con firmeza y cariño":1,"Corrigiendo con respeto":3,"Educar emociones":3}},
-  "1ro Secundaria":{"total":11,"talleres":{"Decisiones que protegen":1,"Familias Saludables (30)":3,"Criar con firmeza y cariño":2,"Hijos en la Era Digital":1,"Familias Saludables (70)":2,"Corrigiendo con respeto":2}},
-  "2do Secundaria":{"total":6,"talleres":{"Decisiones que protegen":2,"Conectando con mis hijos":1,"Educar emociones":3}},
-  "3ro Secundaria":{"total":6,"talleres":{"Familias Saludables (30)":1,"Criar con firmeza y cariño":1,"Conectando con mis hijos":1,"Hijos en la Era Digital":2,"Corrigiendo con respeto":1}},
-  "4to Secundaria":{"total":1,"talleres":{"Conectando con mis hijos":1}},
-  "5to Secundaria":{"total":7,"talleres":{"Decisiones que protegen":3,"Familias Saludables (30)":1,"Conectando con mis hijos":2,"Familias Saludables (70)":1}},
-};
-
+const TALLERES = [{"name": "Corrigiendo con respeto", "cupo": 70, "asist": 44, "ponente": "Psic. Abel Alex Sumi Leon", "hora": "3:30-5:00 pm", "espacio": "Auditorio", "rec": "Inicial y Primaria", "turno": "tarde1"}, {"name": "Educar emociones", "cupo": 25, "asist": 25, "ponente": "Psic. Samy Manrique Enriquez", "hora": "3:30-5:00 pm", "espacio": "2do sec.", "rec": "Inicial y Primaria", "turno": "tarde1"}, {"name": "Conectando con mis hijos", "cupo": 25, "asist": 25, "ponente": "Psic. Samy Manrique Enriquez", "hora": "5:30-7:00 pm", "espacio": "2do sec.", "rec": "Secundaria", "turno": "tarde2"}, {"name": "Hijos en la Era Digital", "cupo": 25, "asist": 23, "ponente": "Psic. Delma Asuncion Quispe", "hora": "3:30-5:00 pm", "espacio": "1ro sec.", "rec": "Inicial y Primaria", "turno": "tarde1"}, {"name": "Familias Saludables (30)", "cupo": 30, "asist": 17, "ponente": "Lic. Virginia Leon Gonzales", "hora": "5:30-7:00 pm", "espacio": "3ro sec.", "rec": "Secundaria", "turno": "tarde2"}, {"name": "Familias Saludables (70)", "cupo": 70, "asist": 15, "ponente": "Lic. Virginia Leon Gonzales", "hora": "3:30-5:00 pm", "espacio": "Auditorio", "rec": "Inicial y Primaria", "turno": "tarde1"}, {"name": "Criar con firmeza y carino", "cupo": 25, "asist": 25, "ponente": "Psic. Abel Alex Sumi Leon", "hora": "5:30-7:00 pm", "espacio": "1ro sec.", "rec": "Secundaria", "turno": "tarde2"}, {"name": "Decisiones que protegen", "cupo": 30, "asist": 11, "ponente": "Psic. Delma Asuncion Quispe", "hora": "5:30-7:00 pm", "espacio": "3ro sec.", "rec": "Secundaria", "turno": "tarde2"}];
+const NOMBRES  = {"3ro Primaria \"Paredes\"": [{"asistente": "Clotilde", "estudiante": "Said Valentino Hancco Patatico", "talleres": ["Corrigiendo con respeto"]}, {"asistente": "Edith Hanco", "estudiante": "América", "talleres": ["Corrigiendo con respeto"]}, {"asistente": "Elizabeth", "estudiante": "Briana Rojas Luque", "talleres": ["Familias Saludables (30)"]}, {"asistente": "Lidia gloria quispe mamani", "estudiante": "Luz yenifer hilasaca quispe", "talleres": ["Corrigiendo con respeto"]}, {"asistente": "MARÍA YANA QUISPE", "estudiante": "Yanelita Michelle Quispe Yana", "talleres": ["Conectando con mis hijos"]}, {"asistente": "Natividad Figueroa Aguilar", "estudiante": "Maia Isabella Lipe Figueroa", "talleres": ["Educar emociones"]}, {"asistente": "Reyna puma", "estudiante": "Ariana maripaz aquise puma", "talleres": ["Educar emociones"]}, {"asistente": "Rosario Del Pilar Pariapaza Cosi", "estudiante": "Fabián Ronaldo Ticona Pariapaza", "talleres": ["Corrigiendo con respeto", "Conectando con mis hijos", "Hijos en la Era Digital", "Familias Saludables (30)", "Criar con firmeza y carino", "Decisiones que protegen"]}, {"asistente": "Rosario Pariapaza Cosi", "estudiante": "Fabián Ronaldo Ticona Pariapaza", "talleres": ["Corrigiendo con respeto"]}], "5to Primaria \"Arriola\"": [{"asistente": "Consuelo Garcia zeballos", "estudiante": "Luis Adrian", "talleres": ["Educar emociones"]}, {"asistente": "Erika Yoselyn Vilca Velasquez", "estudiante": "Yhamileth Calla Vilca", "talleres": ["Corrigiendo con respeto"]}, {"asistente": "Hilda hilasaca mamani", "estudiante": "Ludwing yared lopez hilasaca", "talleres": ["Educar emociones"]}, {"asistente": "Janeth Martinez Mamani", "estudiante": "Mhaximo PILCO Martinez", "talleres": ["Corrigiendo con respeto"]}, {"asistente": "Janeth Martínez", "estudiante": "Mháximo", "talleres": ["Familias Saludables (30)"]}, {"asistente": "Licely Aquino machaca", "estudiante": "Esthefano Kenyi León Aquino", "talleres": ["Criar con firmeza y carino"]}, {"asistente": "Mariel Gadea Vargas", "estudiante": "Yesabel Dayrana Nina Gadea", "talleres": ["Corrigiendo con respeto"]}, {"asistente": "Ronald Pilco Delgado", "estudiante": "Mháximo", "talleres": ["Familias Saludables (30)"]}, {"asistente": "Sonia Mirna  Neyra Suasaca", "estudiante": "Josué Daniel cotacallapa Neyra", "talleres": ["Criar con firmeza y carino"]}, {"asistente": "VIRGINIA LIMA TICONA", "estudiante": "ALLISON Y MATEON", "talleres": ["Educar emociones"]}], "2do Primaria \"Cáceres\"": [{"asistente": "Beatriz caira caira", "estudiante": "Lizeth Shamely Luque caira", "talleres": ["Criar con firmeza y carino"]}, {"asistente": "Benilda Ortiz Zuñiga", "estudiante": "Brianna Luanné Laura Ortiz", "talleres": ["Educar emociones"]}, {"asistente": "Griselda Paredes Quispe", "estudiante": "Thiago Gabriel Zavallos Paredes", "talleres": ["Corrigiendo con respeto"]}, {"asistente": "Jhon Gutierrez Zapana", "estudiante": "Alondra Valentina Gutiérrez Mara", "talleres": ["Hijos en la Era Digital"]}, {"asistente": "Judith Larico Rodrígo", "estudiante": "Allisson Daniela Huacani Larico", "talleres": ["Corrigiendo con respeto"]}, {"asistente": "Karen Sacaca Vargas", "estudiante": "Ibrahim Alaric Lipa Sacaca", "talleres": ["Conectando con mis hijos"]}, {"asistente": "Magno Percy Ticona Ticona", "estudiante": "Cathaleya mairéh Ticona Paucar", "talleres": ["Hijos en la Era Digital"]}, {"asistente": "Maritza Hancco Condori", "estudiante": "Adrián Grego Roselló Hancco", "talleres": ["Decisiones que protegen"]}, {"asistente": "Oscar Bustamante Zapana", "estudiante": "Oscar Thiago Miguel Bustamante Huamán", "talleres": ["Corrigiendo con respeto"]}, {"asistente": "Vianey Pinto Pacoricona", "estudiante": "Kalessy Valentina Moreno Pinto", "talleres": ["Hijos en la Era Digital"]}, {"asistente": "Yola Mamani Sanchez", "estudiante": "Victor Manuel Tacca Mamani", "talleres": ["Criar con firmeza y carino"]}], "Inicial 5 años": [{"asistente": "Alfredo Béjar Mamani", "estudiante": "Ybeth Béjar supo", "talleres": ["Hijos en la Era Digital"]}, {"asistente": "Ida luz suaña mamani", "estudiante": "Darien Oliver hancco suaña", "talleres": ["Corrigiendo con respeto"]}, {"asistente": "juliana Evelyn Arguedas Tapia", "estudiante": "Valentinne Apaza Arguedas", "talleres": ["Corrigiendo con respeto"]}, {"asistente": "Lucia Quispe vilca", "estudiante": "Joseph Yair Quinto Quispe", "talleres": ["Corrigiendo con respeto"]}, {"asistente": "Maribel collanqui arapa", "estudiante": "Lucas Mateo López Collanqui", "talleres": ["Corrigiendo con respeto"]}, {"asistente": "Maritza Sonco Puma leque", "estudiante": "Ezzio Cutinbo Sonco", "talleres": ["Educar emociones"]}, {"asistente": "María Elena Condori Yucra", "estudiante": "Hostin Said Sánchez Condori", "talleres": ["Corrigiendo con respeto"]}, {"asistente": "Olenka capquequi Mamani", "estudiante": "Thiago Quispe capquequi", "talleres": ["Corrigiendo con respeto"]}, {"asistente": "Oscar Bustamante Zapana", "estudiante": "Jack Dilan Bastian Bustamante Huaman", "talleres": ["Conectando con mis hijos"]}, {"asistente": "Rubianesa sillo surco", "estudiante": "Aldair Chambilla sillo", "talleres": ["Corrigiendo con respeto"]}, {"asistente": "Teófilo Mamani Benique", "estudiante": "Cielo Sara Isabel Mamani Mamani", "talleres": ["Hijos en la Era Digital"]}, {"asistente": "Vanesa Padilla dueñas", "estudiante": "Zeynep bellido padilla", "talleres": ["Corrigiendo con respeto"]}, {"asistente": "Yesica panca Mamani", "estudiante": "Kendra otazu panca", "talleres": ["Educar emociones"]}], "1ro Secundaria": [{"asistente": "Bertha Pacha Ticona", "estudiante": "Eyal Amir Paredes Pacha", "talleres": ["Criar con firmeza y carino"]}, {"asistente": "Cloida pacoricona mamani", "estudiante": "Aleida Brianna mamani pacoricona", "talleres": ["Familias Saludables (30)"]}, {"asistente": "Elizabeth Mamani Condori", "estudiante": "Yosep Aldair Puma Mamani", "talleres": ["Hijos en la Era Digital"]}, {"asistente": "Juana cjuno ccansaya", "estudiante": "Bianca yadira cruz cjuno", "talleres": ["Familias Saludables (30)"]}, {"asistente": "Maria Yana Roque", "estudiante": "Gino Daniel Ruelas Yana", "talleres": ["Criar con firmeza y carino"]}, {"asistente": "Maribel", "estudiante": "Jhosep Junior Condori Vilca", "talleres": ["Corrigiendo con respeto"]}, {"asistente": "Roxalina Luque suaña", "estudiante": "Alejandra Daney Mamani Luque", "talleres": ["Decisiones que protegen"]}, {"asistente": "Sandra Vilca Paucar", "estudiante": "Lenin Anderson Chura Vilca", "talleres": ["Corrigiendo con respeto"]}, {"asistente": "Sara Cancapa", "estudiante": "Anderson y Jasmine Cancapa", "talleres": ["Familias Saludables (30)"]}, {"asistente": "Sara Cancapa Lima", "estudiante": "Anderson y Jasmine Cancapa", "talleres": ["Familias Saludables (70)"]}, {"asistente": "Sonia Churata Mostajo", "estudiante": "Eyvan Jeremi Condori Churata", "talleres": ["Familias Saludables (30)"]}, {"asistente": "Yeni aydee machaca Zevallos", "estudiante": "Jairo rick quispe machaca", "talleres": ["Familias Saludables (70)"]}, {"asistente": "Ynés Araujo", "estudiante": "Analí Zapata Araujo", "talleres": ["Familias Saludables (70)"]}], "6to Primaria \"Padilla\"": [{"asistente": "Blanca Ticona Mamani", "estudiante": "Brithzy Lima Ticona", "talleres": ["Corrigiendo con respeto"]}, {"asistente": "Carol maribel machaca mamani", "estudiante": "Sheyla geraldine sumi machaca", "talleres": ["Corrigiendo con respeto"]}, {"asistente": "Lita Mamani Mamani", "estudiante": "Jazmin anyeli", "talleres": ["Corrigiendo con respeto"]}, {"asistente": "Maria Vilda Arpi Quispe", "estudiante": "Georgette Eugenia Condori Arpi", "talleres": ["Educar emociones"]}, {"asistente": "Maxima Mamani Mamani", "estudiante": "Rafael Tintaya Mamani", "talleres": ["Educar emociones"]}, {"asistente": "Miriam Cáceres vilca", "estudiante": "Daniela Darlyn Melgar Caceres", "talleres": ["Educar emociones"]}, {"asistente": "Noemi Leydi Charca Cruz", "estudiante": "Stefhano Rodrigo Choque Charca", "talleres": ["Criar con firmeza y carino"]}], "Inicial 4 años": [{"asistente": "Amanda Korali Soncco", "estudiante": "Gael Alessandro Apaza Soncco", "talleres": ["Criar con firmeza y carino"]}, {"asistente": "Betsy", "estudiante": "Yeicob Gabriel", "talleres": ["Criar con firmeza y carino"]}, {"asistente": "Dery quispe", "estudiante": "Thiago gabriel valencia quispe", "talleres": ["Familias Saludables (30)"]}, {"asistente": "Griss Huayta Huanca", "estudiante": "Valeska Scarlett Quispe Huayta", "talleres": ["Conectando con mis hijos"]}, {"asistente": "Grover Felix Quecara Quispe", "estudiante": "Farid Evans Quecara Mamani", "talleres": ["Corrigiendo con respeto"]}, {"asistente": "Lourdes yucra vilca", "estudiante": "Liam Alejandro barrantes yuca", "talleres": ["Corrigiendo con respeto"]}, {"asistente": "Machaca Hilasaca Lesly", "estudiante": "Machaca Cerezo Daren Shelton", "talleres": ["Conectando con mis hijos"]}, {"asistente": "Mamani Huayapa Zaida", "estudiante": "Murga Mamani Marfil Ariana", "talleres": ["Familias Saludables (30)"]}, {"asistente": "Miriam Zamata Ccari", "estudiante": "Luigui di mattheo", "talleres": ["Criar con firmeza y carino"]}, {"asistente": "Padilla Dueñas Edhit Noemi", "estudiante": "Parillo Padilla Rouss Adriana Mayde", "talleres": ["Familias Saludables (30)"]}, {"asistente": "QUISPE VARGAS RUBEN ROY", "estudiante": "QUISPE HUAYTA VALESKA SCARLETT", "talleres": ["Corrigiendo con respeto"]}, {"asistente": "Rodríguez Lima Jimena Liscet", "estudiante": "Mamani Rodríguez Gael Adriel Jhain", "talleres": ["Corrigiendo con respeto"]}, {"asistente": "Ruth ESCOBAR MARCA", "estudiante": "Alexis benjamin MAMANI ESCOBAR", "talleres": ["Corrigiendo con respeto"]}, {"asistente": "VALENCIA ARAPA DANIEL JUNIOR", "estudiante": "VALENCIA QUISPE THIAGO GABRIEL", "talleres": ["Educar emociones"]}, {"asistente": "Verónica", "estudiante": "Liam felix", "talleres": ["Conectando con mis hijos"]}, {"asistente": "VIRRUETA SURCO CARMEN ROSA", "estudiante": "Zúñiga Virrueta Luana Fernanda", "talleres": ["Corrigiendo con respeto"]}, {"asistente": "Yucra Vilca Lourdes", "estudiante": "Barrantes Yucra Liam Alejandro", "talleres": ["Corrigiendo con respeto"]}], "5to Primaria \"Vásquez\"": [{"asistente": "Hermenegilda Quispe Mamani", "estudiante": "Andree Eduardo Esteban Salcedo Quispe", "talleres": ["Criar con firmeza y carino"]}, {"asistente": "Marivel Ccallo Ccallo", "estudiante": "Luz Brittany  Masco Ccallo", "talleres": ["Corrigiendo con respeto", "Educar emociones"]}, {"asistente": "Miriam Cáceres vilca", "estudiante": "Valentina Mashiel Melgar Caceres", "talleres": ["Educar emociones"]}, {"asistente": "Saady Milagros Huancapaza Laura", "estudiante": "Eidan Adriano Quispe Huancapaza", "talleres": ["Educar emociones", "Hijos en la Era Digital"]}], "3ro Primaria \"Závala\"": [{"asistente": "Blanca Ticona Mamani", "estudiante": "Sneyder Lima Ticona", "talleres": ["Corrigiendo con respeto"]}, {"asistente": "Fredy Quispe", "estudiante": "Nahomi Ariana", "talleres": ["Hijos en la Era Digital"]}, {"asistente": "Fredy Quispe Mamani", "estudiante": "Nahomi Ariana Quispe", "talleres": ["Criar con firmeza y carino"]}, {"asistente": "Jharsey Ruth Gil Martinez", "estudiante": "Bella Victoria de la Trinidad Ccapa Gil", "talleres": ["Conectando con mis hijos"]}, {"asistente": "Kelly Coacalla Suca", "estudiante": "Aaron youl", "talleres": ["Hijos en la Era Digital"]}, {"asistente": "Luz Marina Huahualuque Flores", "estudiante": "Daenerys Alexya Luque Huahualuque", "talleres": ["Criar con firmeza y carino"]}, {"asistente": "Magdalena Muñoz Chambi", "estudiante": "Juan Jesús Estrada Muñoz", "talleres": ["Corrigiendo con respeto"]}, {"asistente": "Maribel", "estudiante": "Kylian", "talleres": ["Corrigiendo con respeto"]}, {"asistente": "Maribel pilco cortez", "estudiante": "Adry Dashiel Barrantes Pilco", "talleres": ["Educar emociones"]}, {"asistente": "Ninfa iriarte paja", "estudiante": "Luis angelo ramirez iriarte", "talleres": ["Criar con firmeza y carino", "Decisiones que protegen"]}, {"asistente": "Ruth Eliana Carpio Carpio", "estudiante": "Luhana Valentina cazorla Carpio", "talleres": ["Conectando con mis hijos"]}, {"asistente": "Yaneth Urviola velasquez", "estudiante": "Liam valentino Ruelas Urviola", "talleres": ["Criar con firmeza y carino"]}, {"asistente": "Yudith lidia Chambi Figueroa", "estudiante": "Adriano Fred Afan Chambi", "talleres": ["Conectando con mis hijos"]}], "1ro Primaria \"Tales de Mileto\"": [{"asistente": "Eliana Auquitias Condori", "estudiante": "Liana Antonela Auquitias Condori", "talleres": ["Corrigiendo con respeto"]}, {"asistente": "Gina Colquehuanca Luque", "estudiante": "Alexa Aitana Huacasi Colquehuanca", "talleres": ["Corrigiendo con respeto"]}, {"asistente": "Lizbeth Veronica Vilca Ramos", "estudiante": "Lyana Dianne Sucasaca  vilca", "talleres": ["Corrigiendo con respeto"]}, {"asistente": "Margaret Nayely Lizarraga Quispe", "estudiante": "Franz Matteo Flores Lizarraga", "talleres": ["Corrigiendo con respeto"]}, {"asistente": "Oreste Apaza Apaza", "estudiante": "DYLAN EMILIO APAZA MAMANI", "talleres": ["Corrigiendo con respeto"]}, {"asistente": "Ronald david lopez quispe", "estudiante": "Leydi jennifer lopez hilasaca", "talleres": ["Educar emociones"]}, {"asistente": "Ruth Salome Araca Alata", "estudiante": "Flavia Gabriela reychell Ticona Araca", "talleres": ["Criar con firmeza y carino"]}], "4to Primaria \"Jilapa\"": [{"asistente": "Delia coila quispe", "estudiante": "Dilan Rivaldo José coila", "talleres": ["Familias Saludables (70)"]}, {"asistente": "Elisabeth Sanca", "estudiante": "Lionel Josué Soto", "talleres": ["Corrigiendo con respeto"]}, {"asistente": "Kimberly rolon", "estudiante": "Loriany Kamila Rolón castillo", "talleres": ["Hijos en la Era Digital"]}, {"asistente": "Luz Veronica Palomino Trujillo", "estudiante": "Abigail Jhamileth Quispe Palomino", "talleres": ["Conectando con mis hijos"]}, {"asistente": "Milagros camila", "estudiante": "Jeriko Jean Pier Soncco Mamani", "talleres": ["Conectando con mis hijos"]}, {"asistente": "Percy hualla ccama", "estudiante": "Thiago Gabriel Hualla García", "talleres": ["Conectando con mis hijos"]}, {"asistente": "Sonia Vargas Calla", "estudiante": "Andre Emir Lipa Vargas", "talleres": ["Familias Saludables (70)"]}, {"asistente": "Vanessa", "estudiante": "Olenka", "talleres": ["Conectando con mis hijos"]}], "3ro Secundaria": [{"asistente": "Fredy", "estudiante": "Anyeli", "talleres": ["Conectando con mis hijos"]}, {"asistente": "Marleni Pacoricona Mamani", "estudiante": "Nayely Maryori Calle Pacoricona", "talleres": ["Corrigiendo con respeto", "Familias Saludables (30)"]}, {"asistente": "Ruelas Apaza Yeny", "estudiante": "Aparicio Ruelas Nicolle Aracely", "talleres": ["Hijos en la Era Digital"]}, {"asistente": "Yeny Natividad Ruelas Apaza", "estudiante": "Aparicio Ruelas Nicolle", "talleres": ["Criar con firmeza y carino"]}, {"asistente": "Yeny suca ari", "estudiante": "Shair Alex suca Gómez, Andre Thiago Quispe suca", "talleres": ["Hijos en la Era Digital"]}], "6to Primaria \"Oquendo\"": [{"asistente": "Ana Quispe Chambi", "estudiante": "Nicole Alaysha Mamani Quispe", "talleres": ["Familias Saludables (30)"]}, {"asistente": "Betty Amanqui Arapa", "estudiante": "Lían André Figueroa Amanqui", "talleres": ["Criar con firmeza y carino"]}, {"asistente": "Braulio Mamani Quispe", "estudiante": "Luis Armando Mamani Vargas", "talleres": ["Hijos en la Era Digital"]}, {"asistente": "Dora Pilco pariapaza", "estudiante": "Glenny Kristell Pacoricona Pilco", "talleres": ["Familias Saludables (70)"]}, {"asistente": "Juana Doris Benites gamarra", "estudiante": "Sol Angel y Ruelas Benites", "talleres": ["Conectando con mis hijos"]}, {"asistente": "Katerin Banda ccoyo", "estudiante": "Xiomara Ylla Banda", "talleres": ["Familias Saludables (70)"]}, {"asistente": "Lyly Vanesa Condori Yquise", "estudiante": "Mamani Condori Massihel Ariadne", "talleres": ["Educar emociones"]}, {"asistente": "MARIBEL GUTIERREZ CANAZA", "estudiante": "Paul Patrick Gabriel Gutiérrez", "talleres": ["Decisiones que protegen"]}, {"asistente": "Mireya", "estudiante": "Britany", "talleres": ["Conectando con mis hijos"]}, {"asistente": "Olivia Pilar Huanco Cusilayme", "estudiante": "Mao Dayron Beizaga Huanco", "talleres": ["Educar emociones"]}, {"asistente": "RUTH", "estudiante": "Thiago andre", "talleres": ["Hijos en la Era Digital"]}, {"asistente": "Tatiana tinado lima", "estudiante": "Dylan Ali Condori Tinado", "talleres": ["Hijos en la Era Digital"]}, {"asistente": "Vanesa arias quilla", "estudiante": "Anghely Zafira Pomari Arias", "talleres": ["Criar con firmeza y carino"]}], "2do Secundaria": [{"asistente": "Delfina Charca Sillo", "estudiante": "Milan Jihuallanca Charca", "talleres": ["Decisiones que protegen"]}, {"asistente": "Elena Casa Flores", "estudiante": "", "talleres": ["Educar emociones"]}, {"asistente": "Lidia gloria quispe mamani", "estudiante": "Yambel yeremy hilasaca quispe", "talleres": ["Decisiones que protegen"]}, {"asistente": "Luzbeth", "estudiante": "Joshua Smith Yana", "talleres": ["Conectando con mis hijos"]}, {"asistente": "Ruth Eliana", "estudiante": "Fabio Ismael", "talleres": ["Educar emociones"]}], "2do Primaria \"Churata\"": [{"asistente": "Carlos Condori huanca", "estudiante": "Carlos Leonel Condori Condori", "talleres": ["Criar con firmeza y carino"]}, {"asistente": "Cesar Lucio Tovar Valdivia", "estudiante": "Rafaela Kassandra Angeles Tovar Luque", "talleres": ["Educar emociones"]}, {"asistente": "Gaby Gisela Noa Sucso", "estudiante": "Gabriel Mateo Bravo Noa", "talleres": ["Familias Saludables (70)"]}, {"asistente": "Joacin Villasante", "estudiante": "Melanie villasante", "talleres": ["Hijos en la Era Digital"]}, {"asistente": "Joacin villasante machaca", "estudiante": "Melanie villasante", "talleres": ["Educar emociones"]}, {"asistente": "Maribel Ortiz Paja", "estudiante": "Kiara Suleyka Cahuana Ortiz", "talleres": ["Familias Saludables (70)"]}, {"asistente": "Marle", "estudiante": "Marleni Larico Quispe", "talleres": ["Familias Saludables (70)"]}, {"asistente": "Marleni Larico Quispe", "estudiante": "Aitana Cefe Espejo Larico", "talleres": ["Familias Saludables (70)"]}, {"asistente": "Nestor Yucra Carita", "estudiante": "Neymar Yucra Aquino", "talleres": ["Hijos en la Era Digital", "Criar con firmeza y carino"]}, {"asistente": "Ruth Escobar marca", "estudiante": "Joseph Sebastián Mamani escobar", "talleres": ["Conectando con mis hijos"]}, {"asistente": "Soledad Virginia Quispe Quispe", "estudiante": "Gael Mateo Alessandro Calsin Quispe", "talleres": ["Familias Saludables (70)"]}, {"asistente": "Tatiana Tinado Lima", "estudiante": "Alejandro Condori Tinado", "talleres": ["Hijos en la Era Digital"]}, {"asistente": "Veronica", "estudiante": "Rosangela yholi", "talleres": ["Conectando con mis hijos"]}, {"asistente": "Yaneth chambi collanqui", "estudiante": "Melanie villasante chambi", "talleres": ["Decisiones que protegen"]}, {"asistente": "Yenifer Larico Huanca", "estudiante": "JOSHUA NICOLAS CONDORI LARICO", "talleres": ["Familias Saludables (70)"]}, {"asistente": "Yodemi Luque Machaca", "estudiante": "Rafaela Kasandra Angeles Tovar Luque", "talleres": ["Educar emociones"]}], "4to Secundaria": [{"asistente": "Maritza Margot Del Aguila Pampa", "estudiante": "Branco Tomy Del Aguila Pampa", "talleres": ["Conectando con mis hijos"]}, {"asistente": "Vianey Pinto Pacoricona", "estudiante": "Berenice Aime Moreno Pinto", "talleres": ["Conectando con mis hijos"]}], "5to Secundaria": [{"asistente": "Benilda Ortiz Zuñiga", "estudiante": "Gaby Massiel Huaquisto Ortiz", "talleres": ["Familias Saludables (70)"]}, {"asistente": "Delia Beatriz Hualla Ccama", "estudiante": "Johana abigail huarachi hualla", "talleres": ["Decisiones que protegen"]}, {"asistente": "Gladiz", "estudiante": "Yoselin yamira", "talleres": ["Familias Saludables (30)"]}, {"asistente": "Jacinta tiña quispe", "estudiante": "Piero Coila Tiña", "talleres": ["Criar con firmeza y carino"]}, {"asistente": "Juana choque acero", "estudiante": "Leydi Yameli Chata Choque", "talleres": ["Conectando con mis hijos"]}, {"asistente": "María Yana Quispe", "estudiante": "Karen María Quispe Yana", "talleres": ["Decisiones que protegen"]}, {"asistente": "Pilar quiste Betancurt", "estudiante": "Jordan Junior mita quiste", "talleres": ["Decisiones que protegen"]}, {"asistente": "Reyna Filomena Payehuanca Vilca", "estudiante": "Reyder Yojhan Mamani Payehuanca", "talleres": ["Conectando con mis hijos"]}], "Inicial 3 años": [{"asistente": "Delma", "estudiante": "Pedrito", "talleres": ["Hijos en la Era Digital"]}, {"asistente": "Fluker Pachauri Coila", "estudiante": "Luna Valentina Pachauri Mamani", "talleres": ["Familias Saludables (30)"]}, {"asistente": "Maribel viera", "estudiante": "Danely aithana justo viera", "talleres": ["Familias Saludables (30)"]}, {"asistente": "Mariel Mamani machaca", "estudiante": "Ricardo Sebastián Mamani", "talleres": ["Familias Saludables (30)"]}, {"asistente": "Pilar mamani", "estudiante": "Alison Mashiel Apaza Mamani", "talleres": ["Familias Saludables (70)"]}]};
+const POR_GRADO = {"3ro Primaria \"Paredes\"": {"total": 20, "talleres": {"Corrigiendo con respeto": 7, "Educar emociones": 2, "Conectando con mis hijos": 3, "Hijos en la Era Digital": 3, "Familias Saludables (30)": 2, "Criar con firmeza y carino": 2, "Decisiones que protegen": 1}}, "5to Primaria \"Arriola\"": {"total": 10, "talleres": {"Corrigiendo con respeto": 3, "Educar emociones": 3, "Familias Saludables (30)": 2, "Criar con firmeza y carino": 2}}, "2do Primaria \"Cáceres\"": {"total": 11, "talleres": {"Corrigiendo con respeto": 3, "Educar emociones": 1, "Conectando con mis hijos": 1, "Hijos en la Era Digital": 3, "Criar con firmeza y carino": 2, "Decisiones que protegen": 1}}, "Inicial 5 años": {"total": 14, "talleres": {"Corrigiendo con respeto": 8, "Educar emociones": 2, "Conectando con mis hijos": 1, "Hijos en la Era Digital": 3}}, "1ro Secundaria": {"total": 13, "talleres": {"Corrigiendo con respeto": 2, "Hijos en la Era Digital": 1, "Familias Saludables (30)": 4, "Familias Saludables (70)": 3, "Criar con firmeza y carino": 2, "Decisiones que protegen": 1}}, "6to Primaria \"Padilla\"": {"total": 7, "talleres": {"Corrigiendo con respeto": 3, "Educar emociones": 3, "Criar con firmeza y carino": 1}}, "Inicial 4 años": {"total": 17, "talleres": {"Corrigiendo con respeto": 7, "Educar emociones": 1, "Conectando con mis hijos": 3, "Familias Saludables (30)": 3, "Criar con firmeza y carino": 3}}, "5to Primaria \"Vásquez\"": {"total": 6, "talleres": {"Corrigiendo con respeto": 1, "Educar emociones": 3, "Hijos en la Era Digital": 1, "Criar con firmeza y carino": 1}}, "3ro Primaria \"Závala\"": {"total": 14, "talleres": {"Corrigiendo con respeto": 3, "Educar emociones": 1, "Conectando con mis hijos": 3, "Hijos en la Era Digital": 2, "Criar con firmeza y carino": 4, "Decisiones que protegen": 1}}, "1ro Primaria \"Tales de Mileto\"": {"total": 7, "talleres": {"Corrigiendo con respeto": 5, "Educar emociones": 1, "Criar con firmeza y carino": 1}}, "4to Primaria \"Jilapa\"": {"total": 8, "talleres": {"Corrigiendo con respeto": 1, "Conectando con mis hijos": 4, "Hijos en la Era Digital": 1, "Familias Saludables (70)": 2}}, "3ro Secundaria": {"total": 6, "talleres": {"Corrigiendo con respeto": 1, "Conectando con mis hijos": 1, "Hijos en la Era Digital": 2, "Familias Saludables (30)": 1, "Criar con firmeza y carino": 1}}, "6to Primaria \"Oquendo\"": {"total": 14, "talleres": {"Educar emociones": 2, "Conectando con mis hijos": 2, "Hijos en la Era Digital": 3, "Familias Saludables (30)": 1, "Familias Saludables (70)": 2, "Criar con firmeza y carino": 3, "Decisiones que protegen": 1}}, "2do Secundaria": {"total": 6, "talleres": {"Educar emociones": 3, "Conectando con mis hijos": 1, "Decisiones que protegen": 2}}, "2do Primaria \"Churata\"": {"total": 17, "talleres": {"Educar emociones": 3, "Conectando con mis hijos": 2, "Hijos en la Era Digital": 3, "Familias Saludables (70)": 6, "Criar con firmeza y carino": 2, "Decisiones que protegen": 1}}, "4to Secundaria": {"total": 2, "talleres": {"Conectando con mis hijos": 2}}, "5to Secundaria": {"total": 8, "talleres": {"Conectando con mis hijos": 2, "Familias Saludables (30)": 1, "Familias Saludables (70)": 1, "Criar con firmeza y carino": 1, "Decisiones que protegen": 3}}, "Inicial 3 años": {"total": 5, "talleres": {"Hijos en la Era Digital": 1, "Familias Saludables (30)": 3, "Familias Saludables (70)": 1}}};
+const POR_GRADO_UNICAS = {"3ro Primaria \"Paredes\"": 9, "5to Primaria \"Arriola\"": 10, "2do Primaria \"Cáceres\"": 11, "Inicial 5 años": 13, "1ro Secundaria": 13, "6to Primaria \"Padilla\"": 7, "Inicial 4 años": 17, "5to Primaria \"Vásquez\"": 4, "3ro Primaria \"Závala\"": 13, "1ro Primaria \"Tales de Mileto\"": 7, "4to Primaria \"Jilapa\"": 8, "3ro Secundaria": 5, "6to Primaria \"Oquendo\"": 13, "2do Secundaria": 5, "2do Primaria \"Churata\"": 16, "4to Secundaria": 2, "5to Secundaria": 8, "Inicial 3 años": 5};
+// Build unique-per-taller counts from NOMBRES
+const POR_GRADO_UNICAS_TALLER = {};
+Object.entries(NOMBRES).forEach(([grado, personas]) => {
+  POR_GRADO_UNICAS_TALLER[grado] = {};
+  personas.forEach(p => {
+    p.talleres.forEach(t => {
+      POR_GRADO_UNICAS_TALLER[grado][t] = (POR_GRADO_UNICAS_TALLER[grado][t]||0) + 1;
+    });
+  });
+});
+const TOTAL = 185;
 const COLORS = ['#7c3aed','#06b6d4','#f59e0b','#10b981','#f43f5e','#8b5cf6','#0ea5e9','#84cc16'];
 const PCOLS  = ['#7c3aed','#06b6d4','#f59e0b','#10b981'];
-Chart.defaults.color='#7a7a9a'; Chart.defaults.font.family='DM Sans';
 
-// ── Ocupación (grouped bar) ──────────────────────────────────────
-new Chart(document.getElementById('cOcc'),{
+Chart.defaults.color = '#7a7a9a';
+Chart.defaults.font.family = 'DM Sans';
+
+new Chart(document.getElementById('cOcc'), {
   type:'bar',
   data:{
-    labels: TALLERES.map(t=>t.name.length>20?t.name.slice(0,18)+'…':t.name),
+    labels: TALLERES.map(t=>t.name.length>22?t.name.slice(0,20)+'...':t.name),
     datasets:[
-      {label:'Cupo',data:TALLERES.map(t=>t.cupo),backgroundColor:'rgba(124,58,237,.25)',borderColor:'#7c3aed',borderWidth:1,borderRadius:5},
-      {label:'Asistentes',data:TALLERES.map(t=>t.asist),backgroundColor:TALLERES.map(t=>t.asist>t.cupo?'rgba(244,63,94,.8)':'rgba(16,185,129,.8)'),borderColor:TALLERES.map(t=>t.asist>t.cupo?'#f43f5e':'#10b981'),borderWidth:1,borderRadius:5}
+      {label:'Cupo',data:TALLERES.map(t=>t.cupo),backgroundColor:'rgba(124,58,237,.25)',borderColor:'#7c3aed',borderWidth:1,borderRadius:4},
+      {label:'Asistentes',data:TALLERES.map(t=>t.asist),
+       backgroundColor:TALLERES.map(t=>t.asist>t.cupo?'rgba(244,63,94,.8)':'rgba(16,185,129,.8)'),
+       borderColor:TALLERES.map(t=>t.asist>t.cupo?'#f43f5e':'#10b981'),borderWidth:1,borderRadius:4}
     ]
   },
-  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{boxWidth:10,font:{size:11}}}},scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{grid:{color:'#2a2a3d'}}}}
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{position:'top',labels:{boxWidth:10,font:{size:11}}}},
+    scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{grid:{color:'#2a2a3d'}}}}
 });
 
-// ── Dona ─────────────────────────────────────────────────────────
-new Chart(document.getElementById('cDona'),{
+new Chart(document.getElementById('cDona'), {
   type:'doughnut',
   data:{labels:TALLERES.map(t=>t.name),datasets:[{data:TALLERES.map(t=>t.asist),backgroundColor:COLORS,borderColor:'#1c1c2a',borderWidth:3,hoverOffset:8}]},
-  options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'right',labels:{boxWidth:9,padding:10,font:{size:10}}},tooltip:{callbacks:{label:ctx=>` ${ctx.raw} asistentes (${Math.round(ctx.raw/163*100)}%)`}}}}
+  options:{responsive:true,maintainAspectRatio:false,cutout:'62%',
+    plugins:{legend:{position:'right',labels:{boxWidth:9,padding:10,font:{size:10}}},
+      tooltip:{callbacks:{label:ctx=>ctx.label+': '+ctx.raw+' ('+Math.round(ctx.raw/TOTAL*100)+'%)'}}}}
 });
 
-// ── Grados horizontal ────────────────────────────────────────────
-const gSorted = Object.entries(POR_GRADO).sort((a,b)=>b[1].total-a[1].total);
-new Chart(document.getElementById('cGrados'),{
+const gSorted = Object.entries(POR_GRADO).sort((a,b)=>(POR_GRADO_UNICAS[b[0]]||0)-(POR_GRADO_UNICAS[a[0]]||0));
+new Chart(document.getElementById('cGrados'), {
   type:'bar',
-  data:{labels:gSorted.map(g=>g[0].replace(/"/g,'')),datasets:[{data:gSorted.map(g=>g[1].total),backgroundColor:gSorted.map((_,i)=>COLORS[i%COLORS.length]+'bb'),borderColor:gSorted.map((_,i)=>COLORS[i%COLORS.length]),borderWidth:1,borderRadius:5}]},
-  options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:'#2a2a3d'},ticks:{font:{size:11}}},y:{grid:{display:false},ticks:{font:{size:10}}}}}
+  data:{labels:gSorted.map(g=>g[0].replace(/['"]/g,'')),
+    datasets:[{data:gSorted.map(g=>POR_GRADO_UNICAS[g[0]]||0),
+      backgroundColor:gSorted.map((_,i)=>COLORS[i%COLORS.length]+'bb'),
+      borderColor:gSorted.map((_,i)=>COLORS[i%COLORS.length]),borderWidth:1,borderRadius:4}]},
+  options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false}},
+    scales:{x:{grid:{color:'#2a2a3d'},ticks:{font:{size:11}}},y:{grid:{display:false},ticks:{font:{size:10}}}}}
 });
 
-// ── Turno (pie) ──────────────────────────────────────────────────
-const t1 = TALLERES.filter(t=>t.turno==='tarde1').reduce((a,t)=>a+t.asist,0);
-const t2 = TALLERES.filter(t=>t.turno==='tarde2').reduce((a,t)=>a+t.asist,0);
-new Chart(document.getElementById('cTurno'),{
+const t1=TALLERES.filter(t=>t.turno==='tarde1').reduce((a,t)=>a+t.asist,0);
+const t2=TALLERES.filter(t=>t.turno==='tarde2').reduce((a,t)=>a+t.asist,0);
+new Chart(document.getElementById('cTurno'), {
   type:'pie',
-  data:{labels:['3:30–5:00 pm (Inicial/Primaria)','5:30–7:00 pm (Secundaria)'],datasets:[{data:[t1,t2],backgroundColor:['rgba(6,182,212,.8)','rgba(124,58,237,.8)'],borderColor:['#06b6d4','#7c3aed'],borderWidth:2}]},
-  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:10,padding:14,font:{size:12}}},tooltip:{callbacks:{label:ctx=>` ${ctx.raw} asistentes`}}}}
+  data:{labels:['3:30-5:00 pm (Inicial/Primaria)','5:30-7:00 pm (Secundaria)'],
+    datasets:[{data:[t1,t2],backgroundColor:['rgba(6,182,212,.8)','rgba(124,58,237,.8)'],borderColor:['#06b6d4','#7c3aed'],borderWidth:2}]},
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{position:'bottom',labels:{boxWidth:10,padding:12,font:{size:12}}},
+      tooltip:{callbacks:{label:ctx=>ctx.label+': '+ctx.raw+' asistentes'}}}}
 });
 
-// ── Stacked con filtro ───────────────────────────────────────────
 let stackChart=null;
 function buildStack(nivel){
   let grados=Object.entries(POR_GRADO);
   if(nivel==='inicial') grados=grados.filter(g=>g[0].startsWith('Inicial'));
-  else if(nivel==='primaria') grados=grados.filter(g=>g[0].includes('Primaria'));
-  else if(nivel==='secundaria') grados=grados.filter(g=>g[0].includes('Secundaria'));
+  if(nivel==='primaria') grados=grados.filter(g=>g[0].includes('Primaria'));
+  if(nivel==='secundaria') grados=grados.filter(g=>g[0].includes('Secundaria'));
   grados.sort((a,b)=>b[1].total-a[1].total);
-  const labels=grados.map(g=>g[0].replace(/"/g,''));
-  const tNames=TALLERES.map(t=>t.name);
-  const datasets=tNames.map((t,i)=>({label:t,data:grados.map(g=>g[1].talleres[t]||0),backgroundColor:COLORS[i]+'bb',borderColor:COLORS[i],borderWidth:1,borderRadius:3}));
+  const labels=grados.map(g=>g[0].replace(/['"]/g,''));
+  const datasets=TALLERES.map((t,i)=>({
+    label:t.name,data:grados.map(g=>g[1].talleres[t.name]||0),
+    backgroundColor:COLORS[i%COLORS.length]+'bb',borderColor:COLORS[i%COLORS.length],borderWidth:1,borderRadius:3
+  }));
   if(stackChart) stackChart.destroy();
-  stackChart=new Chart(document.getElementById('cStack'),{type:'bar',data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:9,padding:9,font:{size:10}}}},scales:{x:{stacked:true,grid:{display:false},ticks:{font:{size:10}}},y:{stacked:true,grid:{color:'#2a2a3d'}}}}});
+  stackChart=new Chart(document.getElementById('cStack'),{type:'bar',data:{labels,datasets},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'bottom',labels:{boxWidth:9,padding:8,font:{size:10}}}},
+      scales:{x:{stacked:true,grid:{display:false},ticks:{font:{size:10}}},y:{stacked:true,grid:{color:'#2a2a3d'}}}}});
 }
 buildStack('todos');
-document.querySelectorAll('#filtroNivel .fb').forEach(btn=>btn.addEventListener('click',function(){
-  document.querySelectorAll('#filtroNivel .fb').forEach(b=>b.classList.remove('active'));
-  this.classList.add('active'); buildStack(this.dataset.nivel);
+document.querySelectorAll('#fNivel .fb').forEach(btn=>btn.addEventListener('click',function(){
+  document.querySelectorAll('#fNivel .fb').forEach(b=>b.classList.remove('active'));
+  this.classList.add('active'); buildStack(this.dataset.n);
 }));
 
-// ── Tabla talleres ────────────────────────────────────────────────
-const tbT=document.getElementById('tbTalleres');
+const tbT=document.getElementById('tbT');
 TALLERES.forEach((t,i)=>{
   const pct=Math.round(t.asist/t.cupo*100);
   const over=t.asist>t.cupo;
-  const cls=pct>=90?'badge-red':pct>=60?'badge-yellow':'badge-green';
-  const barW=Math.min(pct,100);
-  const barColor=over?'#f43f5e':pct>=60?'#f59e0b':'#10b981';
-  tbT.innerHTML+=`<tr>
-    <td style="color:var(--muted)">${i+1}</td>
-    <td style="font-weight:500">${t.name}</td>
-    <td style="font-size:12px;color:var(--muted)">${t.ponente}</td>
-    <td style="font-size:12px;color:#06b6d4">${t.hora}</td>
-    <td style="font-size:12px">${t.espacio}</td>
-    <td><span class="badge">${t.cupo}</span></td>
-    <td><span class="badge ${over?'badge-red':''}">${t.asist}</span></td>
-    <td>
-      <div class="occ-wrap">
-        <span class="occ-num" style="color:${barColor}">${pct}%</span>
-        <div class="bb"><div class="bf" style="width:${barW}%;background:${barColor}"></div></div>
-        ${over?'<span style="font-size:10px;color:#f43f5e">↑ excede</span>':''}
-      </div>
-    </td>
-    <td><span class="badge" style="background:rgba(6,182,212,.12);color:#06b6d4;font-size:10px">${t.rec}</span></td>
-  </tr>`;
+  const bc=over?'#f43f5e':(pct>=60?'#f59e0b':'#10b981');
+  const row=document.createElement('tr');
+  row.innerHTML='<td style="color:#7a7a9a">'+(i+1)+'</td>'+
+    '<td style="font-weight:500">'+t.name+'</td>'+
+    '<td style="font-size:12px;color:#7a7a9a">'+t.ponente+'</td>'+
+    '<td style="font-size:12px;color:#06b6d4">'+t.hora+'</td>'+
+    '<td style="font-size:12px">'+t.espacio+'</td>'+
+    '<td><span class="badge">'+t.cupo+'</span></td>'+
+    '<td><span class="badge'+(over?' badge-red':'')+'">'+t.asist+'</span></td>'+
+    '<td><div class="bi"><div class="bb"><div class="bf" style="width:'+Math.min(pct,100)+'%;background:'+bc+'"></div></div>'+
+      '<span style="font-size:12px;color:'+bc+';min-width:36px">'+pct+'%</span>'+(over?'<span style="font-size:10px;color:#f43f5e;margin-left:4px">excede</span>':'')+'</div></td>'+
+    '<td><span class="badge" style="background:rgba(6,182,212,.12);color:#06b6d4;font-size:10px">'+t.rec+'</span></td>';
+  tbT.appendChild(row);
 });
 
-// ── Tabla grados ──────────────────────────────────────────────────
-const tbG=document.getElementById('tbGrados');
+const tbG=document.getElementById('tbG');
 gSorted.forEach(([grado,info])=>{
-  const pct=Math.round(info.total/163*100);
-  const tallC=Object.keys(info.talleres).length;
-  tbG.innerHTML+=`<tr>
-    <td>${grado.replace(/"/g,'')}</td>
-    <td><span class="badge">${info.total}</span></td>
-    <td>${tallC} de 8</td>
-    <td><div class="bi"><div class="bb"><div class="bf" style="width:${pct*5}%;background:linear-gradient(90deg,var(--a1),var(--a2))"></div></div><span style="font-size:12px;color:var(--muted);min-width:32px">${pct}%</span></div></td>
-  </tr>`;
+  const pct=Math.round(info.total/TOTAL*100);
+  const row=document.createElement('tr');
+  row.innerHTML='<td>'+grado.replace(/['"]/g,'')+'</td>'+
+    '<td><span class="badge">'+(POR_GRADO_UNICAS[grado]||0)+'</span></td>'+
+    '<td>'+Object.keys(info.talleres).length+' de 8</td>'+
+    '<td><div class="bi"><div class="bb"><div class="bf" style="width:'+Math.min(pct*5,100)+'%;background:linear-gradient(90deg,#7c3aed,#06b6d4)"></div></div>'+
+      '<span style="font-size:12px;color:#7a7a9a;min-width:32px">'+pct+'%</span></div></td>';
+  tbG.appendChild(row);
 });
 
-// ── Ponentes ──────────────────────────────────────────────────────
 const ponentes={};
 TALLERES.forEach(t=>{
   if(!ponentes[t.ponente]) ponentes[t.ponente]={talleres:[],total:0};
-  ponentes[t.ponente].talleres.push({name:t.name,hora:t.hora,asist:t.asist,cupo:t.cupo});
-  ponentes[t.ponente].total+=t.asist;
+  ponentes[t.ponente].talleres.push(t); ponentes[t.ponente].total+=t.asist;
 });
-const pg=document.getElementById('ponentes');
+const pgDiv=document.getElementById('pgDiv');
 Object.entries(ponentes).forEach(([nombre,info],i)=>{
-  pg.innerHTML+=`<div class="pcard" style="--pc:${PCOLS[i%PCOLS.length]}">
-    <div class="pcard-name">${nombre}</div>
-    <div class="pcard-meta">
-      ${info.talleres.map(t=>`<span>📋 ${t.name} <span style="color:var(--a2)">${t.hora}</span> — ${t.asist}/${t.cupo} asist.</span>`).join('')}
-    </div>
-    <span class="pcard-tag">Total: ${info.total} participantes</span>
-  </div>`;
+  const div=document.createElement('div');
+  div.className='pc'; div.style.setProperty('--pc',PCOLS[i%PCOLS.length]);
+  div.innerHTML='<div class="pn">'+nombre+'</div><div class="pm">'+
+    info.talleres.map(t=>'<span>'+t.name+' <span style="color:#06b6d4">'+t.hora+'</span> - '+t.asist+'/'+t.cupo+' asist.</span>').join('')+
+    '</div><span class="pt">Total: '+info.total+' participantes</span>';
+  pgDiv.appendChild(div);
 });
+
+// ── Directorio por salon ─────────────────────────────────────────
+const selGrado=document.getElementById('selGrado');
+const selTaller=document.getElementById('selTaller');
+const tbIns=document.getElementById('tbInscritos');
+const listaDiv=document.getElementById('listaInscritos');
+const placeholder=document.getElementById('placeholderDir');
+const countBadge=document.getElementById('countBadge');
+
+Object.keys(NOMBRES).sort().forEach(grado=>{
+  const opt=document.createElement('option');
+  opt.value=grado; opt.textContent=grado.replace(/['"]/g,'');
+  selGrado.appendChild(opt);
+});
+
+function renderInscritos(){
+  const grado=selGrado.value;
+  const taller=selTaller.value;
+  if(!grado){ listaDiv.style.display='none'; placeholder.style.display='block'; countBadge.style.display='none'; return; }
+  listaDiv.style.display='block'; placeholder.style.display='none'; tbIns.innerHTML='';
+
+  let personas = NOMBRES[grado] || [];
+
+  // Si filtra por taller especifico, solo mostrar quienes estan en ese taller
+  if(taller !== 'todos'){
+    personas = personas.filter(p => p.talleres.includes(taller));
+  }
+
+  // Una fila por persona, con todos sus talleres en chips
+  personas.forEach((p,i)=>{
+    const talleresHtml = p.talleres.map(t=>'<span class="taller-tag">'+t+'</span>').join('');
+    const tr=document.createElement('tr');
+    tr.innerHTML='<td style="color:#7a7a9a">'+(i+1)+'</td>'+
+      '<td style="font-weight:500">'+p.asistente+'</td>'+
+      '<td style="color:#e8e8f0">'+p.estudiante+'</td>'+
+      '<td>'+talleresHtml+'</td>';
+    tbIns.appendChild(tr);
+  });
+
+  countBadge.textContent=personas.length+' personas';
+  countBadge.style.display='inline-block';
+}
+
+selGrado.addEventListener('change',function(){
+  selTaller.innerHTML='<option value="todos">Todos los talleres</option>';
+  if(this.value && NOMBRES[this.value]){
+    const tallsEnGrado=new Set();
+    NOMBRES[this.value].forEach(p=>p.talleres.forEach(t=>tallsEnGrado.add(t)));
+    Array.from(tallsEnGrado).sort().forEach(t=>{
+      const opt=document.createElement('option');
+      opt.value=t; opt.textContent=t; selTaller.appendChild(opt);
+    });
+  }
+  renderInscritos();
+});
+selTaller.addEventListener('change',renderInscritos);
 </script>
 </body>
 </html>
