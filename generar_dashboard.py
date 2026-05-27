@@ -80,7 +80,6 @@ def detectar_duplicados(dfs):
 def procesar(dfs):
     talleres_data = []
     por_grado = {}
-    # nombres[grado] = { norm_name: {asistente, estudiante, talleres:[...]} }
     nombres = {}
 
     for taller_nombre, df in dfs.items():
@@ -96,8 +95,8 @@ def procesar(dfs):
             "turno":   info.get("turno", "tarde1"),
         })
 
-        col_grado     = encontrar_col(df, ["grado"])
-        col_asistente = encontrar_col(df, ["asistente"])
+        col_grado      = encontrar_col(df, ["grado"])
+        col_asistente  = encontrar_col(df, ["asistente"])
         col_estudiante = encontrar_col(df, ["estudiante"])
         if not col_grado:
             continue
@@ -127,11 +126,9 @@ def procesar(dfs):
                             "estudiante": estud if estud != "nan" else "",
                             "talleres": []
                         }
-                    # Add taller only if not already registered
                     if taller_nombre not in nombres[grado][norm]["talleres"]:
                         nombres[grado][norm]["talleres"].append(taller_nombre)
 
-    # Convert nombres dict to list per grado for JSON
     nombres_list = {}
     for grado, personas in nombres.items():
         nombres_list[grado] = sorted(
@@ -142,14 +139,12 @@ def procesar(dfs):
     total      = sum(t["asist"] for t in talleres_data)
     cupo_total = sum(t["cupo"]  for t in talleres_data)
 
-    # Personas unicas globales (por nombre normalizado, sin importar taller)
     personas_unicas_global = set()
     for grado, personas in nombres.items():
         for norm, info in personas.items():
             personas_unicas_global.add(norm)
     personas_unicas = len(personas_unicas_global)
 
-    # Personas unicas por grado
     por_grado_unicas = {}
     for grado, personas in nombres.items():
         por_grado_unicas[grado] = len(personas)
@@ -158,12 +153,11 @@ def procesar(dfs):
 
 def generar_html(talleres_data, por_grado, nombres, total, cupo_total, personas_unicas, por_grado_unicas, duplicados, fecha):
     occ_global = round(total / cupo_total * 100) if cupo_total else 0
-    max_taller = max((t["asist"] for t in talleres_data), default=0)
     n_grados   = len(por_grado)
 
-    tj  = json.dumps(talleres_data,   ensure_ascii=False)
-    gj  = json.dumps(por_grado,       ensure_ascii=False)
-    nj  = json.dumps(nombres,         ensure_ascii=False)
+    tj  = json.dumps(talleres_data,    ensure_ascii=False)
+    gj  = json.dumps(por_grado,        ensure_ascii=False)
+    nj  = json.dumps(nombres,          ensure_ascii=False)
     puj = json.dumps(por_grado_unicas, ensure_ascii=False)
 
     dup_section = ""
@@ -243,8 +237,6 @@ tr:hover td{background:rgba(124,58,237,.05)}
 .bi{display:flex;align-items:center;gap:8px}
 .bb{flex:1;height:7px;background:var(--border);border-radius:99px;overflow:hidden}
 .bf{height:100%;border-radius:99px}
-.taller-tag{display:inline-block;margin:2px;padding:2px 8px;border-radius:999px;
-  font-size:10px;font-weight:600;background:rgba(6,182,212,.12);color:#06b6d4}
 .pg{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:14px}
 .pc{background:var(--surf);border:1px solid var(--border);border-radius:14px;
   padding:18px;position:relative;overflow:hidden}
@@ -254,6 +246,22 @@ tr:hover td{background:rgba(124,58,237,.05)}
 .pt{display:inline-block;margin-top:8px;padding:2px 9px;border-radius:999px;
   font-size:10px;background:rgba(124,58,237,.15);color:var(--a1);font-weight:600}
 footer{text-align:center;color:var(--muted);font-size:11px;margin-top:56px}
+
+/* ── Taller detail block inside inscrito card ── */
+.taller-block{
+  margin:5px 0;padding:10px 12px;border-radius:12px;
+  border-left-width:3px;border-left-style:solid;
+  background:rgba(255,255,255,.03);
+}
+.taller-block-name{
+  font-size:11px;font-weight:700;margin-bottom:6px;
+}
+.taller-block-grid{
+  display:grid;grid-template-columns:16px 1fr;gap:3px 7px;
+  font-size:10px;color:#9a9ab8;align-items:start;
+}
+.taller-block-grid .ico{color:#7a7a9a;font-style:normal;line-height:1.4}
+.taller-block-grid .val{line-height:1.4}
 </style>
 </head>
 <body>
@@ -343,7 +351,7 @@ footer{text-align:center;color:var(--muted);font-size:11px;margin-top:56px}
       <div style="font-size:12px;margin-top:6px">Puedes filtrar ademas por taller especifico</div>
     </div>
     <div id="listaInscritos" style="display:none">
-      <div id="gridInscritos" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px"></div>
+      <div id="gridInscritos" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px"></div>
     </div>
   </div>
 </div>
@@ -356,6 +364,7 @@ const TALLERES = """ + tj + """;
 const NOMBRES  = """ + nj + """;
 const POR_GRADO = """ + gj + """;
 const POR_GRADO_UNICAS = """ + puj + """;
+
 // Build unique-per-taller counts from NOMBRES
 const POR_GRADO_UNICAS_TALLER = {};
 Object.entries(NOMBRES).forEach(([grado, personas]) => {
@@ -366,6 +375,7 @@ Object.entries(NOMBRES).forEach(([grado, personas]) => {
     });
   });
 });
+
 const TOTAL = """ + str(total) + """;
 const COLORS = ['#7c3aed','#06b6d4','#f59e0b','#10b981','#f43f5e','#8b5cf6','#0ea5e9','#84cc16'];
 const PCOLS  = ['#7c3aed','#06b6d4','#f59e0b','#10b981'];
@@ -504,8 +514,18 @@ Object.keys(NOMBRES).sort().forEach(grado=>{
 });
 
 const TALLER_COLORS = ['#7c3aed','#06b6d4','#f59e0b','#10b981','#f43f5e','#8b5cf6','#0ea5e9','#84cc16'];
-const TALLER_COLOR_MAP = {};
-TALLERES.forEach((t,i) => { TALLER_COLOR_MAP[t.name] = TALLER_COLORS[i%TALLER_COLORS.length]; });
+
+// Map taller name → color + full info (hora, espacio, ponente, rec)
+const TALLER_META = {};
+TALLERES.forEach((t, i) => {
+  TALLER_META[t.name] = {
+    color:   TALLER_COLORS[i % TALLER_COLORS.length],
+    hora:    t.hora,
+    espacio: t.espacio,
+    ponente: t.ponente,
+    rec:     t.rec,
+  };
+});
 
 function renderInscritos(){
   const grado   = selGrado.value;
@@ -529,10 +549,23 @@ function renderInscritos(){
 
   personas.forEach((p, i) => {
     const initials = p.asistente.split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase();
-    const color = TALLER_COLORS[i % TALLER_COLORS.length];
+    const avatarColor = TALLER_COLORS[i % TALLER_COLORS.length];
+
+    // Build taller detail blocks with hora, espacio, ponente, rec
     const talleresHtml = p.talleres.map(t => {
-      const c = TALLER_COLOR_MAP[t] || '#7c3aed';
-      return '<span style="display:inline-block;margin:2px;padding:3px 9px;border-radius:999px;font-size:10px;font-weight:600;background:'+c+'22;color:'+c+';border:1px solid '+c+'44">'+t+'</span>';
+      const meta = TALLER_META[t] || {};
+      const c    = meta.color || '#7c3aed';
+      return (
+        '<div class="taller-block" style="border-left-color:'+c+';border-left-color:'+c+'">' +
+          '<div class="taller-block-name" style="color:'+c+'">'+t+'</div>' +
+          '<div class="taller-block-grid">' +
+            '<i class="ico">&#128336;</i><span class="val">'+(meta.hora    ||'—')+'</span>' +
+            '<i class="ico">&#128205;</i><span class="val">'+(meta.espacio ||'—')+'</span>' +
+            '<i class="ico">&#128100;</i><span class="val">'+(meta.ponente ||'—')+'</span>' +
+            '<i class="ico">&#127919;</i><span class="val">'+(meta.rec     ||'—')+'</span>' +
+          '</div>' +
+        '</div>'
+      );
     }).join('');
 
     const card = document.createElement('div');
@@ -541,15 +574,15 @@ function renderInscritos(){
     card.onmouseleave = function(){ this.style.transform=''; this.style.borderColor='#2a2a3d'; };
 
     card.innerHTML =
-      '<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">' +
-        '<div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,'+color+','+color+'88);display:flex;align-items:center;justify-content:center;font-family:Syne,sans-serif;font-weight:800;font-size:14px;color:#fff;flex-shrink:0">'+initials+'</div>' +
+      '<div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,'+avatarColor+',transparent)"></div>' +
+      '<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">' +
+        '<div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,'+avatarColor+','+avatarColor+'88);display:flex;align-items:center;justify-content:center;font-family:Syne,sans-serif;font-weight:800;font-size:14px;color:#fff;flex-shrink:0">'+initials+'</div>' +
         '<div style="min-width:0">' +
           '<div style="font-weight:600;font-size:14px;color:#e8e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+p.asistente+'</div>' +
-          (p.estudiante ? '<div style="font-size:11px;color:#7a7a9a;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Hijo/a: '+p.estudiante+'</div>' : '') +
+          (p.estudiante ? '<div style="font-size:11px;color:#7a7a9a;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">&#127919; Hijo/a: '+p.estudiante+'</div>' : '') +
         '</div>' +
       '</div>' +
-      '<div style="display:flex;flex-wrap:wrap;gap:4px">'+talleresHtml+'</div>' +
-      '<div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,'+color+',transparent)"></div>';
+      talleresHtml;
 
     gridDiv.appendChild(card);
   });
@@ -613,7 +646,6 @@ if __name__ == "__main__":
         print("AVISO: asistencia.html no encontrado, saltando generacion del formulario")
 
     print(f"\nDashboard generado: {output}")
-    print(f"Formulario asistencia generado: asistencia.html")
     print(f"Total registros: {total} | Ocupacion global: {round(total/cupo_total*100)}%")
     print("\nAbriendo en el navegador...")
     webbrowser.open(f"file:///{os.path.abspath(output)}")
